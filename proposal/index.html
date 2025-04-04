@@ -44,9 +44,9 @@
 		<div style="text-align: center;">Names: Rachel Hu, Philip Ye, Crystal Chen, Jessica He</div>
 
 		<br>
-		Link to webpage: <a href="https://cal-cs184-student.github.io/hw-webpages-skibidirizz/hw2/index.html">TODO</a>
+		Link to webpage: <a href="https://025rhu.github.io/cs184-final-project/">https://025rhu.github.io/cs184-final-project/</a>
 		<br>
-		Link to GitHub repository: <a href="https://github.com/cal-cs184-student/sp25-hw2-schwaa-money">TODO</a>
+		Link to proposal GitHub repository: <a href="https://github.com/025rhu/cs184-final-project">https://github.com/025rhu/cs184-final-project</a>
 		<br>
 
 		<figure>
@@ -62,18 +62,25 @@
 
 		<h2>Problem Description</h2>
 
-		<h4>The Problem</h4>
-		<p></p>
+		<h4>The Problem + Where it is Challenging</h4>
+		<p>In the context of animation, creating fluid motion often requires methods like relying on motion captured data or manually simulating 
+			every frame, which can both often be extremely time consuming and computationally intensive, especially in real-time applications and 
+			complex environments. Motion captured data is also limited to real life objects and thus often isn’t useful when building and animating 
+			imaginary objects or characters. Currently, animation usually utilizes temporal keyframing, which captures movement through intermediate 
+			poses at specific times and then interpolates between these poses. However, it can be difficult to produce smooth complex movements and makes 
+			real-time responsiveness more challenging as well. 
+		</p>
 
 		<h4>Why it is Important</h4>
-		<p></p>
-
-
-		<h4>Where it is Challenging</h4>
-		<p></p>
+		<p>This issue is important because animation nowadays is becoming much more complex and interactive, and to keep up with this, we need to find 
+			ways to more efficiently animate characters while also maintaining quality. Solving this problem would allow for much more creative freedom 
+			in the context of animation and make it simpler, and thus more accessible, for users.</p>
 
 		<h4>General Solution Idea</h4>
-		<p></p>
+		<p>We plan to solve these issues by implementing spatial keyframing, where we can simply provide a couple important intermediate poses in 3D space 
+			(instead of in time),  and we’re able to interpolate the rest of the frames based on the position of a control point in space and by blending 
+			nearby intermediate poses. With this control point, it’s much easier to efficiently and smoothly animate characters or objects in real-time. 
+			It also reduces the dependency on motion capture data, allowing for more flexibility and creative freedom in animating characters and objects.</p>
 
 		<h2>Goals and Deliverables</h2>
 		
@@ -175,15 +182,14 @@
 		<h2>Resources</h2>
 		<h3>Learning Resources</h3>
 		<ul>
-			<li>Cartwheeling teddy bear</li>
-			<li>Bear rumming its tummy</li>
-			<li>more examples...</li>
+			<li>Paper on spatial keyframing for performance-driven animation: <a href="https://dl.acm.org/doi/10.1145/1281500.1281536">https://dl.acm.org/doi/10.1145/1281500.1281536</a></li>
+			<li>Using Blender for animation: <a href="https://www.blender.org/features/animation/">https://www.blender.org/features/animation/</a></li>
+
 		</ul>
 		<h3>Computing Platform, Hardware and Software Resources</h3>
 		<ul>
-			<li>Cartwheeling teddy bear</li>
-			<li>Bear rumming its tummy</li>
-			<li>more examples...</li>
+			<li>Blender (for animation)</li>
+			<li></li>
 		</ul>
 		
 		</div>
