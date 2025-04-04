@@ -113,8 +113,22 @@
 			<li>Any body frame??</li>
 		</ul>
 		<h3>Measurements for System Quality & Performance</h3>
+		<p>
+			Overall, two key areas we want to see our engine excel at is smoothness and speed, especially because the overarching goal is to actually produce realistic animation via relatively minimal keyframes. 
+		</p>
 		<ul>
-			<li>[Measurement Name]: [Description]</li>
+			Smoothness:
+			<li> Initially, we plan to qualitatively compare and contrast the smoothness and fluidity of motion through experimentation, and seeing how different types of interpolations affect movement. </li>
+			<li>Perhaps we can introduce extra features such as inverse kinematics to further stabilize the movements.</li>
+			<li>Then going forward, if we want to be more precise, we can actually measure the deviation from say the idealized path versus what was actually traced out, and see if we can make any difference in undesirable effects such as jittering or rapid unnatural movements. </li>
+		</ul>
+
+		<ul>
+			Performance/Speed:
+			<li>Initially this will be qualitatively noted with how long the program takes and potential lag times, for example, with the cursor. </li>
+			<li>Then, we can start to measure how long our engine takes to interpolate movement for perhaps different interpolation methods.</li>
+			<li>We can also consider the relationship between varying the number of keyframes within a certain duration and what our resultant animation looks like in terms of compute time, smoothness (f.e. measured via deviations from expected path). </li>
+
 		</ul>
 		<h3>Demo of Interactive System / Animations we Intend to Create</h3>
 		<p>paragraph here describing the demo</p>
@@ -128,10 +142,23 @@
 
 		<h3>What questions do you plan to answer?</h3>
 		<ul>
-			<li>Q1</li>
-			<li>Q2</li>
+			<li>How to determine the “best” method to interpolate smoothly between keyframes?</li>
+			<li>How do we realistically render and incorporate shadows into our 3D keyframes? </li>
 			<li>...</li>
 		</ul>
+
+		<h3>Overall Deliverables:</h3>
+		<h4>What we fully plan on delivering:</h4>
+
+		<h4>What we hope to deliver:</h4>
+		<ul>
+			If all goes well, we ideally want to have the ability to extend our engine to animate almost any kind of motion given any kind of 3D body. If you can imagine it, we want to be able to animate it, and really bring it to life.
+			<li>If we get ahead of schedule, we would like to perfect our engine, making sure our models are extremely stable, and exploring more potential avenues to ensure this. For example, promising areas include inverse kinematics and other mathematical considerations, as well as trying to shape our models to obey the laws of everyday physics. </li>
+			<li> Furthermore, we can possibly start to categorize different tyeps of movements, and only use certain interpolation methods for different movements on some case-by-case basis to make them look as realistic as possible. </li>
+			<li> Along with this categorization, we’d like to identify any potential types of movements are engine is particularly weak at interpolating, and finding the correct solutions for these cases. </li>
+
+		</ul>
+
 		<h2>Schedule</h2>
 		<table>
 			<tr>
@@ -184,6 +211,8 @@
 		<ul>
 			<li>Paper on spatial keyframing for performance-driven animation: <a href="https://dl.acm.org/doi/10.1145/1281500.1281536">https://dl.acm.org/doi/10.1145/1281500.1281536</a></li>
 			<li>Using Blender for animation: <a href="https://www.blender.org/features/animation/">https://www.blender.org/features/animation/</a></li>
+			<li>Background Article on Keyframe Animation: <a href="https://pixune.com/blog/what-is-keyframe-animation/#:~:text=Types%20of%20Keyframes,timeline%20to%20change%20keyframes%27%20types">https://pixune.com/blog/what-is-keyframe-animation/#:~:text=Types%20of%20Keyframes,timeline%20to%20change%20keyframes%27%20types</a></li>
+			<li>How to Aniamte With Inverse Kinematics: <a href="https://docs-stg.toonboom.com/help/animate-pro/Content/HAR/Stage/017_Cut-out_Animation/021_H1_Animating_using_Inverse_Kinematics.html">https://docs-stg.toonboom.com/help/animate-pro/Content/HAR/Stage/017_Cut-out_Animation/021_H1_Animating_using_Inverse_Kinematics.html</a></li>
 
 		</ul>
 		<h3>Computing Platform, Hardware and Software Resources</h3>
