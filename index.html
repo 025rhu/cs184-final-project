@@ -1,23 +1,81 @@
-<html>
+<!DOCTYPE html>
+<html lang="en">
 	<head>
-		<link rel="stylesheet" href="stylehome.css">
+		<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+	<style>
+			h1 {
+				text-align: center;
+			}
+
+			.container {
+				margin: 0 auto;
+				padding: 60px 20%;
+			}
+
+			figure {
+				text-align: center;
+			}
+
+			img {
+				display: inline-block;
+			}
+
+			body {
+				font-family: 'Inter', sans-serif;
+				line-height: 1.4;
+				color: #32323a;
+				background-color: #ffffff;
+				display: flex;
+				flex-direction: column;
+				justify-content: center;
+				align-items: center;
+				width: 40%;
+				height: 100%;
+				margin: 0;
+				position: absolute;
+				left: 50%;
+				transform: translateX(-50%);
+			}
+
+		@media (max-width: 600px) {
+			body {
+				width: 100%;
+				left: 0;
+				transform: none;
+			}
+		}
+
+		a {
+			text-decoration: none;
+			color: #0057A8;
+		}
+
+		a:hover {
+			color: #8E018E !important;
+			text-decoration: underline;
+		}
+	</style>
+	<meta http-equiv="content-type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CS184 Final Project</title>
 	</head>
 	<body>
-		<h1>CS184 Project Directory</h1>
-		<h3 style="text-align: center">Spring 2023</h3>
-		<h3 style="text-align: center">By Alana Li</h3>
-		<h2>
-			<br><br>
-			<a href="/proj1/index.html">Project 1: Rasterizer</a>
-			<br><br>
-			<a href="/proj2/index.html">Project 2: MeshEdit</a>
-			<br><br>
-			<a href="/proj3-1/index.html">Project 3-1</a>
-			<br><br>
-			<a href="/proj3-2/index.html">Project 3-2</a>
-			<br><br>
-			<a href="/proj4/index.html">Project 4</a>
-		</h2>
+		<div class="wrapper">
+			<header>
+				<h1 style="align-self:flex-end;">CS184 Final Project</h1>
+				<h4 style="text-align: center; margin: 2px;">By Rachel Hu, Philip Ye, Crystal Chen, Jessica He</h4>
+				<h5 style="text-align: center; margin-top: 10px;">Spring 2025</h5>
+			</header>
+			<main>
+				<div class="content">
+					<ul>
+						<li><a href="/proposal/index.html">Project Proposal</a></li>
+						<li><a href="/write-up/index.html">Final Write Up</a></li>
+						
+					</ul>
+				</div>
+			</main>
+		</div>
 	</body>
 	<script>
 		var links = document.body.getElementsByTagName("a")
