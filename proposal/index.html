@@ -39,7 +39,7 @@
 	</head>
 	<body>
 		<div class="container">
-		<h1>______ in Action</h1>
+		<h1>Paws in Action</h1>
 		<h3 style="text-align: center;">CS184 Spring 2025 Final Project Proposal</h3>
 		<div style="text-align: center;">Names: Rachel Hu, Philip Ye, Crystal Chen, Jessica He</div>
 
@@ -48,11 +48,6 @@
 		<br>
 		Link to proposal GitHub repository: <a href="https://github.com/025rhu/cs184-final-project">https://github.com/025rhu/cs184-final-project</a>
 		<br>
-
-		<figure>
-			<img src="teapot.png" alt="Teapot" style="width:50%"/>
-			<figcaption>You can add images with captions!</figcaption>
-		</figure>
 
 		<!--
 		We've already added one heading per part, to make your write-up as navigable when grading. Please fit your write-up within these sections!
@@ -87,15 +82,79 @@
 		Our goal is to create an interactive UI that allows the user to do spatial keyframing themselves.
 		<h3>What we plan to deliver</h3>
 		<p>
-			paragraph should address 
-			<br>
-			"what you are trying to accomplish": 
-				at a high level: spatial keyframing capabilities with a single character in a fixed position in 3D space.
-				at a lower level: what the UI will look like (button options, background, basic textiled ground, what character is in the middle, it's a 3D charactrer with shadows, etc).
-			<br>
-			"what results you are going for": describe what the user can do in this UI i.e. set keyframes by going into this mode, selecting certain body parts, moving them, etc. move between modes. etc. and the graphical results of it: smooth and reasonable interpolation, no hallucinations / wacky results, results look like what the user intended
-			<br>
-			"why you think you can accomplish those goals":
+			This is the most important part of your proposal. You should carefully think through what you are trying to accomplish, what results you are going for, and why you think you can accomplish those goals. For example:
+Since this is a graphics class you will likely define the kind of images you will create (e.g. including a photo of a new lighting effect you will simulate).
+<li>Simple 3D four legged character</li>
+<li>For stretch goals maybe we can say any (simple-ish) 3d mesh for a character</li>
+<p>What you are trying to accomplish? </p>
+<li>at a high level: spatial keyframing capabilities with a single character in a fixed position in 3D space.</li>
+<li>at a lower level: what the UI will look like (button options, background, basic textiled ground, what character is in the middle, it's a 3D character with shadows, etc).</li>
+<p>[HIGH LEVEL]</p>
+<li>At a high level, we want to create a user interface where people can create their own fun character animations, simply by setting a few key poses, and moving around their cursor.</li>
+<li>This program will use spatial keyframing to produce a character animation with intended, valid, and realistic movements. The user gets 2 modes: 1 to move around the character and set these spatial keyframes, and 1 to actually use them to create fun animations.</li>
+<p>[DESCRIBING THE INTERFACE]</p>
+The UI will display the 3D character in the center of the screen. The character will be floating above a single color floor. Outside of the floor and the character, the rest of the screen will be empty space– some single color that light does not affect.
+The user will have a few modes they can switch between: a mode where they are setting keyframes, and an animation mode
+This character will be a 3D four legged character, most likely a bear because go bears!
+During the keyframe setting mode, will have joints representing the degrees of freedom, and the 3D “spatial keyframe” will need to be updated depending on the orientation / angle of all of these joints
+<p>[IMPLEMENTATION TOPICS]</p>
+While spatial keyframing is the main algorithm we are focusing on, there are many building blocks that a successful implementation of this algorithm depends on, some of which we have already touched on in prior projects.
+<li>
+
+	Light Tracing: The 3D nature of the character and world space means we need to create shadows properly, both on the character’s mesh and the ground below the character. We will set a single, fixed light source in 3D space, somewhere above the character. The specific location we are still debating; in front of the character makes the most sense, but we are unsure how this will render when we rotate to view the back of the character, so we are also considering putting the light source directly above the character. 
+</li>
+<li>
+
+	Hierarchical Transforms: For the character to actually move and change its body positions, we will implement hierarchical transforms on its body parts.
+	<br>
+	“A pose is defined as a set of local transformations of the body parts. We currently do not allow translation for any part except the root, so we have 3×3 rotation matrices for all parts and one xyz translation vector for the root part.”
+	From the paper - this lets us move our character around through translation of the root, and allow the characters joints to move by some 3D rotation algorithm. You could probably do this by computing the vector where the joints attach and applying some rotation matrix based on the position of your mouse
+	<br>
+	The specific transform in animation should be determined by the actual spatial keyframing interpolation algorithm.
+	<br>
+	The transform in setting poses involves following the user’s cursor. The user will select a body part, then drag it to a new position in space. How we derive an overarching transform for this may be something we need to figure out. We could fix the user’s initial click position to a position on the body part, then develop a transform based on this body part’s transformation. However, let’s say the user’s cursor moves further from the fixed body part that this selected body part is attached to. Does that mean we stretch the selected body part? No. So how do we handle that? This is an implementation question we will do more research into.
+	<br>
+	The paper mentioned orthonormalizing the interpolated matrix we use for transforming our character, this is very important to preserve the scale of our character. The paper outlined a pretty simple approach that also helps us find degenerate cases - we think this will be very useful
+</li>
+<li>
+
+	Translating Between Spaces in All Algorithms: 
+	Throughout all other algorithms, we will need to translate properly between different coordinate spaces. There will be much coordinate space translation that we will have to be super careful about across all our algorithms. We have the world space, which is the 3D space that our character exists in, and that our light source is fix-pointed in. We also have our camera-space, which is the 3D space relative to the perspective of the camera. Then, we also have our screen space, which is our own / the user view of the user interface. 
+	We will need to be very careful about translating between these spaces. For example, in processing the user’s cursor position, the user’s cursor lies in screen space, which we will then need to translate to camera space, then into world space. Rotating and changing our view of the character involves changing our camera’s position in world space, and thus the resulting perspective of background, floor, and character that we see in screen space.
+</li>
+<p>[OUT OF SCOPE]</p>
+<li>
+	No zoom in and zoom out, so our mesh will be fixed.
+</li>
+<li>
+
+	No texture.
+</li>	
+<li>
+
+	No material mapping.
+</li>
+"why you think you can accomplish those goals":
+A lot of this project relies on 2 things: transforms via rotation matrices, and 3D interpolation. Both were topics extensively covered in Homework 2, and so we have had a good bit of exposure to these topics already. Additionally, this paper and project are essentially modeling an efficient way to model keyframes from the 2D world → 3D world, which is also something we’ve had a decent bit of exposure to. Finally, we think that having a 2-part interactive system lends itself to a nicely wrapped, abstracted system which should be manageable enough if we’re smart about how we plan out and distribute our work!
+If you are working on an interactive system, describe what demo you will create.
+Demo of user moving character in different poses + taking keyframe snapshots, then program interpolates and creates smooth movement 
+Define how you will measure the quality / performance of your system (e.g. graphs showing speedup, or quantifying accuracy). It may not be possible to define precise target metrics at this time, but we encourage you to try.
+Qualitatively speaking, two key areas we want to see our engine excel at is smoothness and speed, especially because the overarching goal is to actually produce realistic animation via relatively minimal keyframes. 
+Initially, we plan to qualitatively compare and contrast the smoothness and fluidity of motion through experimentation, and seeing how different types of interpolations affect movement. Perhaps we can introduce extra features such as inverse kinematics to further stabilize the movements. 
+Then going forward, if we want to be more precise, we can actually measure the deviation from say the idealized path versus what was actually traced out, and see if we can make any difference in undesirable effects such as jittering or rapid unnatural movements.
+As for performance, initially this will be qualitatively noted with how long the program takes and potential lag times, for example, with the cursor. Then, we can start to measure how long our engine takes to interpolate movement for perhaps different interpolation methods.
+We can also consider the relationship between varying the number of keyframes within a certain duration and what our resultant animation looks like in terms of compute time, smoothness (f.e. measured via deviations from expected path). Ultimately, we want to make sure our engine can interpolate keyframes as quickly and smoothly as possible.
+What questions do you plan to answer?
+How to determine the “best” method to interpolate smoothly between keyframes?
+How do we realistically render and incorporate shadows into our 3D keyframes?
+You should break this section into two parts: (1) what you plan to deliver, and (2) what you hope to deliver. In (1), describe what you believe you must accomplish to have a successful project and achieve the grade you expect (i.e. your baseline plan – planning for some unexpected problems would make sense). In (2), describe what you hope to achieve if things go well and you get ahead of schedule (your aspirational plan).
+(1) Deliver UI where user can move around a 3D character + take snapshots of different poses → program creates fluid animation based on these
+Ideally have different interpolation algorithms to choose from (and be able to compare/contrast)
+(2) If all goes well, we ideally want to have the ability to extend our engine to animate almost any kind of motion given any kind of 3D body. If you can imagine it, we want to be able to animate it, and really bring it to life.
+If we get ahead of schedule, we would like to perfect our engine, making sure our models are extremely stable, and exploring more potential avenues to ensure this. For example, promising areas include inverse kinematics and other mathematical considerations, as well as trying to shape our models to obey the laws of everyday physics.
+Furthermore, we can possibly start to categorize different tyeps of movements, and only use certain interpolation methods for different movements on some case-by-case basis to make them look as realistic as possible.
+Along with this categorization, we’d like to identify any potential types of movements are engine is particularly weak at interpolating, and finding the correct solutions for these cases.
+
 		</p>
 		
 		<h4>Interactive UI Core Features</h4>
