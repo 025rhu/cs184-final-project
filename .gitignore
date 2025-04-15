@@ -1,0 +1,11 @@
+CMakeCache.txt
+
+/build/
+
+.idea/
+*.vs
+*.vscode
+*.suo
+*.user
+
+.DS_Store
