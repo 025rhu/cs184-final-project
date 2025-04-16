@@ -1,9 +1,11 @@
 # CS184 Final Project
 
+## Building and Running the Code
 ```bash
 cd build
+cmake ..
 make
-TODO
+./FinalProject
 ```
 
 ## Libraries / Dependencies
