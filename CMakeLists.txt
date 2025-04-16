@@ -26,6 +26,7 @@ if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
   set(BUILD_DEBUG ON CACHE BOOL "Build with debug settings" FORCE)
 endif()
 
+
 #-------------------------------------------------------------------------------
 # Platform-specific settings
 #-------------------------------------------------------------------------------
@@ -260,6 +261,7 @@ add_executable(FinalProject
     src/main.cpp
     src/shader.cpp
     src/model.cpp
+    src/animator.cpp
     # Add more source files here as needed
 )
 
