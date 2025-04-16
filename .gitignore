@@ -20,4 +20,4 @@
 *.vscode
 
 # Ignore machine-specific files
-.DS_Store
+*.DS_Store

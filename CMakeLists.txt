@@ -1,5 +1,8 @@
 cmake_minimum_required(VERSION 2.8)
 project(FinalProject)
+if(APPLE)
+    add_definitions(-DGL_SILENCE_DEPRECATION)
+endif()
 
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -254,7 +257,9 @@ endif(BUILD_LIBCGL)
 # Final executable
 # -----------------------------------------------------------------------------
 add_executable(FinalProject
-    main.cpp
+    src/main.cpp
+    src/shader.cpp
+    src/model.cpp
     # Add more source files here as needed
 )
 
@@ -270,12 +275,26 @@ target_include_directories(FinalProject PRIVATE
 
 target_link_libraries(FinalProject
     nanogui
-    glfw
+    # glfw
     OpenGL::GL
     Threads::Threads
     assimp
     CGL
 )
+
+# -----------------------------------------------------------------------------
+# Copy shaders into build directory
+# -----------------------------------------------------------------------------
+file(GLOB SHADER_FILES
+    "${CMAKE_SOURCE_DIR}/shaders/*.vert"
+    "${CMAKE_SOURCE_DIR}/shaders/*.frag"
+)
+
+foreach(SHADER ${SHADER_FILES})
+    get_filename_component(SHADER_NAME ${SHADER} NAME)
+    configure_file(${SHADER} ${CMAKE_BINARY_DIR}/shaders/${SHADER_NAME} COPYONLY)
+endforeach()
+
 
 
 # build documentation
