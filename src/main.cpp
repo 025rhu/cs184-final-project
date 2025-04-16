@@ -2,25 +2,21 @@
 #include <nanogui/window.h>
 #include <nanogui/opengl.h>
 
-// #include <Eigen/Core>
-// #include <Eigen/Dense>
+#include <Eigen/Core>
+#include <Eigen/Dense>
 
 #include <GLFW/glfw3.h>
 #include <iostream>
 #include <cmath>
 
-#include "CGL/matrix4x4.h"
 #include "shader.h"
 #include "model.h"
-#include "CGL/CGL.h"
-
-
 
 // Perspective matrix builder
-CGL::Matrix4x4 makePerspective(float fovy, float aspect, float zNear, float zFar) {
+Eigen::Matrix4f makePerspective(float fovy, float aspect, float zNear, float zFar) {
     float tanHalfFovy = std::tan(fovy / 2.0f);
 
-    CGL::Matrix4x4 mat;
+    Eigen::Matrix4f mat = Eigen::Matrix4f::Zero();
     mat(0, 0) = 1.0f / (aspect * tanHalfFovy);
     mat(1, 1) = 1.0f / (tanHalfFovy);
     mat(2, 2) = -(zFar + zNear) / (zFar - zNear);
@@ -42,9 +38,11 @@ int main() {
 
             // OpenGL config
             glEnable(GL_DEPTH_TEST);
+            glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+
 
             // Load your model (relative path if run from build/)
-            loadModel("../models/donut.fbx");
+            loadModel("../models/bear.fbx");
         }
 
         virtual void drawContents() override {
@@ -54,20 +52,20 @@ int main() {
             glUseProgram(shader);
 
             // Matrices
-            CGL::Matrix4x4 model = CGL::Matrix4x4::identity();
-            CGL::Matrix4x4 view = CGL::Matrix4x4::identity();
-            view(2, 3) = -150.0f;
-            float aspect = (float)mSize.x() / (float)mSize.y();
-            CGL::Matrix4x4 proj = makePerspective(45.0f * M_PI / 180.0f, aspect, 0.1f, 100.0f);
+            Eigen::Matrix4f model = Eigen::Matrix4f::Identity();
+            Eigen::Matrix4f view = Eigen::Matrix4f::Identity();
+            view(2, 3) = -180.0f;
+            float aspect = (float) mSize.x() / (float) mSize.y();
+            Eigen::Matrix4f proj = makePerspective(45.0f * M_PI / 180.0f, aspect, 0.1f, 100.0f);
 
             // Upload uniforms
             GLint locModel = glGetUniformLocation(shader, "uM");
             GLint locView  = glGetUniformLocation(shader, "uV");
             GLint locProj  = glGetUniformLocation(shader, "uP");
 
-            // glUniformMatrix4fv(locModel, 1, GL_FALSE, model);
-            // glUniformMatrix4fv(locView,  1, GL_FALSE, view.data());
-            // glUniformMatrix4fv(locProj,  1, GL_FALSE, proj.data());
+            glUniformMatrix4fv(locModel, 1, GL_FALSE, model.data());
+            glUniformMatrix4fv(locView,  1, GL_FALSE, view.data());
+            glUniformMatrix4fv(locProj,  1, GL_FALSE, proj.data());
 
             // Draw mesh
             glBindVertexArray(VAO);

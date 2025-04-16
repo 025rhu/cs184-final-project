@@ -4,6 +4,9 @@
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
+#include <Eigen/Core>
+#include <Eigen/Dense>
+
 
 GLuint VAO, VBO, NBO, CBO, EBO;
 int indexCount = 0;

@@ -14,4 +14,5 @@ void main() {
     vec3 lighting = v_color * diff + 0.1 * v_color; // simple diffuse + ambient
 
     out_color = vec4(lighting, 1.0);
+    // out_color = vec4(1.0, 0.0, 1.0, 1.0);
 }
