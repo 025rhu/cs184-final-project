@@ -7,13 +7,15 @@
 #include <Eigen/Core>
 #include <Eigen/Dense>
 
-
 GLuint VAO, VBO, NBO, CBO, EBO;
 int indexCount = 0;
+Eigen::Vector3f modelCenter(0.0f, 0.0f, 0.0f);
+float modelHeight = 1.0f;
+
 void loadModel(const std::string& path) {
     Assimp::Importer importer;
     const aiScene* scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_GenNormals | aiProcess_JoinIdenticalVertices);
-    
+
     if (!scene || !scene->HasMeshes()) {
         std::cerr << "Failed to load model: " << path << std::endl;
         return;
@@ -23,6 +25,9 @@ void loadModel(const std::string& path) {
     std::vector<float> normals;
     std::vector<float> colors;
     std::vector<unsigned int> indices;
+
+    aiVector3D min(1e10f, 1e10f, 1e10f);
+    aiVector3D max(-1e10f, -1e10f, -1e10f);
 
     unsigned int vertexOffset = 0;
 
@@ -34,6 +39,13 @@ void loadModel(const std::string& path) {
         for (unsigned int i = 0; i < mesh->mNumVertices; ++i) {
             aiVector3D pos = mesh->mVertices[i];
             aiVector3D norm = mesh->mNormals[i];
+
+            min.x = std::min(min.x, pos.x);
+            min.y = std::min(min.y, pos.y);
+            min.z = std::min(min.z, pos.z);
+            max.x = std::max(max.x, pos.x);
+            max.y = std::max(max.y, pos.y);
+            max.z = std::max(max.z, pos.z);
 
             vertices.push_back(pos.x);
             vertices.push_back(pos.y);
@@ -68,14 +80,19 @@ void loadModel(const std::string& path) {
 
     indexCount = indices.size();
 
+    aiVector3D center = (min + max) * 0.5f;
+    modelCenter = Eigen::Vector3f(center.x, center.y, center.z);
+    modelHeight = max.y - min.y;
+
     std::cout << "Model has " << indexCount / 3 << " triangles across " << scene->mNumMeshes << " mesh(es)" << std::endl;
+    std::cout << "Model center: (" << center.x << ", " << center.y << ", " << center.z << ")\n";
+    std::cout << "Model height: " << modelHeight << std::endl;
 
     // Upload data to GPU
     glGenVertexArrays(1, &VAO);
     glGenBuffers(1, &VBO);
     glGenBuffers(1, &NBO);
     glGenBuffers(1, &EBO);
-    GLuint CBO;
     glGenBuffers(1, &CBO);
 
     glBindVertexArray(VAO);
