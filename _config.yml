@@ -1,1 +1,5 @@
 theme: jekyll-theme-cayman
+
+exclude:
+  - ext/assimp/contrib/googletest/docs/
+  - ext/nanogui/ext/eigen/unsupported/Eigen/CXX11/src/Tensor/README.md
