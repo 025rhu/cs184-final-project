@@ -1,4 +1,3 @@
-// AnimatedObject.h
 #pragma once
 #include <vector>
 #include <string>
@@ -7,17 +6,16 @@
 
 class AnimatedObject {
 public:
-    /// load a bunch of frames
+    // load frames
     bool load(const std::vector<std::string>& paths);
 
     // advance the time, tracked by accumulator
-    void update(float dt);                 // dt = seconds since previous call
+    void update(float dt);
 
-    // draw the current frame
+    // draw frame
     void draw() const;
 
-    // default 1fps
-    float secondsPerFrame = 1.0f;          // 1 fps
+    float secondsPerFrame = 1.0f;
 
 private:
     std::vector<MeshFrame> frames;

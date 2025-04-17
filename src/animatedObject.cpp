@@ -1,12 +1,12 @@
 // AnimatedObject.cpp
 #include "animatedObject.h"
-#include "model.h"          // ← your loadModel‑like helper
+#include "model.h"
 #include <iostream>
 
-/// helper that **returns** a VAO + index count instead of writing globals
+// returns VAO and index count instead of writing globals
 static MeshFrame loadStaticMesh(const std::string& path) {
     MeshFrame f = loadModel(path);
-    if (f.vao == 0) {                 // 0 vao = bad frame
+    if (f.vao == 0) {
         std::cerr << "Cannot load " << path << '\n';
     }
     return f;
@@ -34,7 +34,6 @@ void AnimatedObject::update(float dt)
     if (accumulator >= secondsPerFrame) {
         accumulator -= secondsPerFrame;
 
-        // cycle
         current = (current + 1) % int(frames.size());
     }
 }
