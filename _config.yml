@@ -1,1 +1,4 @@
 theme: jekyll-theme-cayman
+
+exclude:
+  - ext/assimp/contrib/googletest/docs/
