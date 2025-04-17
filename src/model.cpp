@@ -7,23 +7,20 @@
 #include <Eigen/Core>
 #include <Eigen/Dense>
 
-GLuint VAO, VBO, NBO, CBO, EBO;
-int indexCount = 0;
-Eigen::Vector3f modelCenter(0.0f, 0.0f, 0.0f);
-float modelHeight = 1.0f;
 
-void loadModel(const std::string& path) {
+MeshFrame loadModel(const std::string& path,
+                    Eigen::Vector3f*    outCenter,
+                    float*              outHeight) {
+
     Assimp::Importer importer;
     const aiScene* scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_GenNormals | aiProcess_JoinIdenticalVertices);
 
     if (!scene || !scene->HasMeshes()) {
         std::cerr << "Failed to load model: " << path << std::endl;
-        return;
+        return {};
     }
 
-    std::vector<float> vertices;
-    std::vector<float> normals;
-    std::vector<float> colors;
+    std::vector<float> vertices, normals, colors;
     std::vector<unsigned int> indices;
 
     aiVector3D min(1e10f, 1e10f, 1e10f);
@@ -78,16 +75,21 @@ void loadModel(const std::string& path) {
         vertexOffset += mesh->mNumVertices;
     }
 
-    indexCount = indices.size();
+    int indexCount = indices.size();
 
     aiVector3D center = (min + max) * 0.5f;
-    modelCenter = Eigen::Vector3f(center.x, center.y, center.z);
-    modelHeight = max.y - min.y;
+    Eigen::Vector3f modelCenter = Eigen::Vector3f(center.x, center.y, center.z);
+    float modelHeight = max.y - min.y;
+
+    if (outCenter) *outCenter = {center.x, center.y, center.z};
+    if (outHeight) *outHeight = max.y - min.y;
 
     std::cout << "Model has " << indexCount / 3 << " triangles across " << scene->mNumMeshes << " mesh(es)" << std::endl;
     std::cout << "Model center: (" << center.x << ", " << center.y << ", " << center.z << ")\n";
     std::cout << "Model height: " << modelHeight << std::endl;
 
+    // now local per fbx file
+    GLuint VAO, VBO, NBO, CBO, EBO;
     // Upload data to GPU
     glGenVertexArrays(1, &VAO);
     glGenBuffers(1, &VBO);
@@ -120,4 +122,12 @@ void loadModel(const std::string& path) {
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), indices.data(), GL_STATIC_DRAW);
 
     glBindVertexArray(0);
+
+    
+    
+    // return the MeshFrame
+    MeshFrame ret;
+    ret.indexCount = static_cast<GLuint>(indices.size());
+    ret.vao = VAO;
+    return ret;
 }

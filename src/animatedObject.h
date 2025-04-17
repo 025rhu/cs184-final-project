@@ -1,47 +1,26 @@
-// #ifndef NODE_H
-// #define NODE_H
-// #include <vector>
-// #include "CGL/CGL.h"
-// #include "CGL/quaternion.h"
-// #include "CGL/vector3D.h"
-// // #include "Eigen/Core"
+// AnimatedObject.h
+#pragma once
+#include <vector>
+#include <string>
+#include <nanogui/opengl.h>	
+#include "model.h"
 
-// struct VertexAttributes {
-//     CGL::Vector3D position;
-//     CGL::Vector3D normal;
-//     CGL::Vector3D color;  // RGB values (0–1)
+class AnimatedObject {
+public:
+    /// load a bunch of frames
+    bool load(const std::vector<std::string>& paths);
 
-//     VertexAttributes interpolate(const VertexAttributes& other, float alpha) const {
-//         VertexAttributes result;
-//         result.position = (1 - alpha) * position + alpha * other.position;
-//         result.normal   = (1 - alpha) * normal + alpha * other.normal;
-//         result.color    = (1 - alpha) * color + alpha * other.color;
-//         return result;
-//     }
-// };
+    // advance the time, tracked by accumulator
+    void update(float dt);                 // dt = seconds since previous call
 
+    // draw the current frame
+    void draw() const;
 
-// struct KeyframeState {
-//     float time;  // in seconds
+    // default 1fps
+    float secondsPerFrame = 1.0f;          // 1 fps
 
-//     // Transform
-//     CGL::Vector3D position;
-//     CGL::Quaternion rotation;
-//     CGL::Vector3D scale;
-
-//     std::vector<VertexAttributes> vertex_data;
-// };
-
-
-// class AnimatedObject {
-//     public:
-//         std::string name;
-//         std::vector<VertexAttributes> baseVertices;
-//         std::vector<KeyframeState> keyframes;
-    
-//         KeyframeState interpolateAt(float time) const;
-// };
-    
-    
-
-// #endif // NODE_H
+private:
+    std::vector<MeshFrame> frames;
+    int  current = 0;
+    float accumulator = 0.0f;
+};
