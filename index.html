@@ -69,23 +69,13 @@
 			<main>
 				<div class="content">
 					<ul>
-						<li><a href="/proposal/index.html">Project Proposal</a></li>
-						<li><a href="/milestone/index.html">Milestone</a></li>
-						<li><a href="/write-up/index.html">Final Write Up</a></li>
+						<li><a href="proposal/index.html">Project Proposal</a></li>
+						<li><a href="milestone/index.html">Milestone</a></li>
+						<li><a href="write-up/index.html">Final Write Up</a></li>
 					</ul>
 				</div>
 				
 			</main>
 		</div>
 	</body>
-	<script>
-		var links = document.body.getElementsByTagName("a")
-		var a = window.location.href.indexOf(".io")
-		var repo_name = window.location.href.substring(a+3)
-		for(var i = 0; i < links.length; i++){
-			var link = links[i]
-			var actual_name = link.href.substring(link.href.indexOf(".io")+4)
-			link.href = repo_name + actual_name
-		}
-	</script>
 </html>
