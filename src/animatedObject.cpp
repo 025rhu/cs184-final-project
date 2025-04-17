@@ -6,7 +6,7 @@
 /// helper that **returns** a VAO + index count instead of writing globals
 static MeshFrame loadStaticMesh(const std::string& path) {
     MeshFrame f = loadModel(path);
-    if (f.vao == 0) {                 // 0 VAO = failure
+    if (f.vao == 0) {                 // 0 vao = bad frame
         std::cerr << "Cannot load " << path << '\n';
     }
     return f;

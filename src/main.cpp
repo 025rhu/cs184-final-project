@@ -28,51 +28,49 @@ static Eigen::Matrix4f makePerspective(float fovy, float aspect, float zNear, fl
 
 
 class Viewer : public nanogui::Screen {
-public:
+    public:
+        Viewer() : nanogui::Screen(Eigen::Vector2i(1024, 768), "FBX Viewer", true) {
+            // Load and compile shaders
+            shader = createShaderProgram("shaders/Default.vert", "shaders/Default.frag");
 
-    Viewer() : nanogui::Screen(Eigen::Vector2i(1024, 768), "FBX Viewer", true) {
-        // Load and compile shaders
-        shader = createShaderProgram("shaders/Default.vert", "shaders/Default.frag");
-
-        // OpenGL config
-        glEnable(GL_DEPTH_TEST);
-        anim.secondsPerFrame = 1.0f;          // 10 fps
-        bool ok = anim.load({
-        "../models/bear.fbx",
-        "../models/bear_frame0.fbx",
-        "../models/bear.fbx",
-        });
-        if (!ok) std::cerr << "failed to load at least one frame\n";
-
-        lastTime = glfwGetTime();
-    }
+            // OpenGL config
+            glEnable(GL_DEPTH_TEST);
+            anim.secondsPerFrame = 0.5f;          // 10 fps
+            bool ok = anim.load({
+            "../models/bear.fbx",
+            "../models/bear_frame0.fbx",
+            "../models/bear.fbx",
+            });
+            if (!ok) std::cerr << "failed to load at least one frame\n";
+            lastTime = glfwGetTime();
+        }
 private:
     GLuint shader = 0;
     AnimatedObject anim;
+    double lastTime = 0.0;          
 
-double lastTime = 0.0;          
-
-    Eigen::Matrix4f lookAt(const Eigen::Vector3f& eye,
-        const Eigen::Vector3f& center,
-        const Eigen::Vector3f& up)
+    Eigen::Matrix4f lookAt(
+                        const Eigen::Vector3f& eye,
+                        const Eigen::Vector3f& center,
+                        const Eigen::Vector3f& up)
     {
-    Eigen::Vector3f f = (center - eye).normalized();
-    Eigen::Vector3f s = f.cross(up).normalized();
-    Eigen::Vector3f u = s.cross(f);
+        Eigen::Vector3f f = (center - eye).normalized();
+        Eigen::Vector3f s = f.cross(up).normalized();
+        Eigen::Vector3f u = s.cross(f);
 
-    Eigen::Matrix4f m = Eigen::Matrix4f::Identity();
-    m.block<1,3>(0,0) =  s.transpose();
-    m.block<1,3>(1,0) =  u.transpose();
-    m.block<1,3>(2,0) = -f.transpose();
-    m(0,3) = -s.dot(eye);
-    m(1,3) = -u.dot(eye);
-    m(2,3) =  f.dot(eye);
-    return m;
+        Eigen::Matrix4f m = Eigen::Matrix4f::Identity();
+        m.block<1,3>(0,0) =  s.transpose();
+        m.block<1,3>(1,0) =  u.transpose();
+        m.block<1,3>(2,0) = -f.transpose();
+        m(0,3) = -s.dot(eye);
+        m(1,3) = -u.dot(eye);
+        m(2,3) =  f.dot(eye);
+        return m;
     }
 
     virtual void drawContents() override {
 
-        // timing -- for animation
+        // timing -- used for animation
         double now = glfwGetTime();
         float dt = float(now - lastTime);
         lastTime = now;

@@ -7,20 +7,20 @@
 
 class AnimatedObject {
 public:
-    /// Load a sequence of static FBX files, one per frame.
+    /// load a bunch of frames
     bool load(const std::vector<std::string>& paths);
 
-    /// Advance the internal time and pick the frame to display.
+    // advance the time, tracked by accumulator
     void update(float dt);                 // dt = seconds since previous call
 
-    /// Draw the current frame.
+    // draw the current frame
     void draw() const;
 
-    /// Seconds per frame (you can change this on the fly).
-    float secondsPerFrame = 1.0f;          // = 10 fps
+    // default 1fps
+    float secondsPerFrame = 1.0f;          // 1 fps
 
 private:
     std::vector<MeshFrame> frames;
-    int  current      = 0;
+    int  current = 0;
     float accumulator = 0.0f;
 };
