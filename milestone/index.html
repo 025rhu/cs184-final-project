@@ -54,6 +54,92 @@
 		-->
 
 		<h2>Summary</h2>
+        <p>
+            So far, we have learned how to use Blender to create our character with keyframes,
+            and render the character with these keyframes in a GUI.
+        </p>
+        <p>
+            To start, we learned how to use Blender following
+            <a href="https://www.youtube.com/watch?v=B0J27sf9N1Y">this intro to Blender tutorial</a>
+            to create a donut. Then, we built our own bear character, and learned rigging from
+            <a href="https://www.youtube.com/watch?v=jIwrswJEFBQ">this rigging tutorial</a>
+            to put the bear in different poses at different timestamps.
+        </p>
+        <p>
+            Then, we set up our repository. We had initially looked at
+            <a href="https://veeenu.github.io/blog/implementing-keyframe-animation/">
+                this KeyFrame Animation resource
+            </a>
+            provided in our proposal feedback as a starting point, which used WebGL and Javascript to render in a browser.
+            However, since we were used to working with OpenGL and C++ to render in a local window, we decided to use the Homework 4 repository as our starting point instead,
+            still using the provided resource to learn about the interpolation algorithm.
+        </p>
+        <p>
+            Setting up and successfully building a repository was surprisingly a lot more difficult than we anticipated, since we had to integrate external libraries.
+            We spent a whole day successfully creating, compiling and building our ext/, shaders/, and src/ directories, synonymous to the ones in Homework 4.
+        </p>
+        <p>
+            <ul>
+                <li>In ext/, we have the nanogui, assimp, and CGL libraries.</li>
+                <li>In src/, we have a main.cpp and a few other files to help load the FBX model and shader programs.</li>
+                <li>In shaders/, we have a simple default vertex and fragment shader.</li>
+                <li>We also have an additional models/ directory, where we have placed our FBX files.</li>
+            </ul>
+        </p>
+        <p>
+            At first, we tried to use FetchContent to download Assimp “on the fly”, but we ran into lots of problems using this approach.
+            Since we saw that Homework 4 had submoduled the nanogui repo in ext/, we decided it was probably ok to do so with Assimp as well.
+            After that, it was a matter of debugging issues with <code>cmake ..</code> and <code>make</code>, and rewriting <code>CMakeLists.txt</code> accordingly.
+        </p>
+        <p>
+            While setting up the repo, we also spent time building out our foundational understanding of tools that will be used in this project
+            For example, learning about FBX files, referencing OpenGL/WebGL and using HW 4 part 5 as a guiding resource,
+            figuring out CMake, using libraries like Assimp, Nanogui...
+            Though we spent much of our time (more time than expected) understanding these basic concepts and tools,
+            we believe that this is key to iterating quickly in the future, and now we are confident that we’ll be able to hit the ground running.
+        </p>
+        <p>
+            Once we were successful with compiling and building the repo with a simple NanoGUI window, we moved onto visualizing a simple model from an FBX file.
+            We learned how to use Assimp to load in our FBX file and retrieve the data we needed for the bear.
+            For the shader program, we used the default vertex shader from Homework 4, and Bling Phong without specular light for the fragment shader.
+            The main issue here was that our camera was positioned in the wrong place, so we needed to set its position correctly so that we could see our model.
+            Eventually, we got to the point where we could render our bear model and switch between different keyframed poses.</p>
+        </p>
+        <div style="display: flex; justify-content: space-evenly; align-items: center; flex-wrap: wrap; gap: 20px; padding: 20px;">
+			<div style="text-align: center;">
+			  <img src="blender-bear.jpeg" width="400px" />
+			  <figcaption>Blender Bear</figcaption>
+			</div>
+			<div style="text-align: center;">
+			  <img src="rendered-bear.jpeg" width="400px" />
+			  <figcaption>Rendered Bear</figcaption>
+			</div>
+		  </div>
+        <p>
+            Our current track and progress diverge from our initial schedule, largely because we decided to switch from spatial keyframing to temporal keyframing for the sake of simplicity.
+            However, we are generally on track with the temporal equivalent of our spatial keyframing goals in the original schedule.
+        </p>
+        <p>
+            In our original proposal, we outlined that we’d spend Week 1 creating the 3D character in Blender
+            and creating some sort of UI interface so that the user could manually select and set certain keyframe poses that we’d interpolate.
+            However, this was a hefty goal, so for the sake of time, we decided to pivot and set all keyframes in Blender,
+            saved to FBX files, instead of setting keyframes in the GUI.
+            We will continue to touch it up, but we are satisfied with our progress in designing a model thus far.
+        </p>
+        <p>
+            Week 2 in the original proposal was learning and implementing hierarchial transform and a view scrolling algorithm.
+            However, now that we are no longer doing spatial keyframing, we no longer needed to do that.
+            As such, we took the time in Week 2 to do the creating the UI part from Week 1: setting up the repository and rendering FBX files in the screen.
+        </p>
+        <p>
+            From hereonout, our plan is pretty similar to the original. In week 3, we create the interpolation algorithm.
+            On top of this now, we will fix any camera issues that occur, and design a program (classes, objects, etc)
+            inspired by Homework 4's that will actually set us up to do this interpolation.
+            Then Week 4 will be the same as the original: finish up anything from Week 3, and create the material for our Final Deliverable / Presentation.
+        </p>
+        
+            
+        <!-- </p>
 		You should briefly summarize:
         - what you have accomplished
         - preliminary results
@@ -61,15 +147,15 @@
         - update your work plan as appropriate
         You must submit this milestone deliverable (and the final deliverable)
         on a persistent website that you can choose to keep up after class
-        if you wish to present this work in your portfolio.
+        if you wish to present this work in your portfolio. -->
         <h2>Video</h2>
-        <video width="640" height="360" controls>
+        <video width="100%" height="600px" controls>
             <source src="test-video.mp4" type="video/mp4">
             Your browser does not support the video tag.
         </video>
         <h2>Presentation Slides</h2>
-        <iframe src="test-presentation.pdf" width="100%" height="600px">
-          This browser does not support PDFs. Please download the PDF to view it: <a href="test-presentation.pdf">Download PDF</a>
+        <iframe src="milestone-presentation.pdf" width="100%" height="600px">
+          This browser does not support PDFs. Please download the PDF to view it: <a href="milestone-presentation.pdf">Download PDF</a>
         </iframe>
         
     </div>
