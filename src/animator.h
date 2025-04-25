@@ -1,56 +1,60 @@
-// #ifndef KEYFRAME_ANIMATOR_H
-// #define KEYFRAME_ANIMATOR_H
+#ifndef ANIMATOR_H
+#define ANIMATOR_H
 
-// #include "nanogui/glutil.h"
-// #include "string"
-// #include <nanogui/screen.h>
+#include <glad/glad.h>
+#include <nanogui/screen.h>
+#include <Eigen/Core>
+#include <Eigen/Dense>
+#include <vector>
 
-// using namespace nanogui;
-// using namespace std;
-
-// class KeyFrameAnimator {
-// public:
-//     KeyFrameAnimator(std::string project_root, Screen *screen);
-//     ~KeyFrameAnimator();
-
-//     void init();
-
-//     void loadModel();
-//     virtual void drawContents();
-
-// private:
-//     virtual void initGUI(Screen *screen);
-//     void loadShaders();
-
-//     // Camera methods
-
-//     virtual void resetCamera();
-//     virtual Matrix4f getProjectionMatrix();
-//     virtual Matrix4f getViewMatrix();
-
-//     // File management
-
-//     std::string m_project_root;
-
-//     // Screen methods
-//     Screen *screen;
-
-//     // OpenGL attributes
-
-//     int active_shader_idx = 0;
-
-//     GLShader* shader;
-//     // vector<GLShader*> shaders;
-//     // GLShader* vert_shader;
-//     // GLShader* frag_shader;
-
-//     // vector<std::string> shaders_combobox_names;
-
-//     // Screen attributes
-
-//     Vector2i default_window_size = Vector2i(1024, 800);
+using namespace nanogui;
+using namespace std;
 
 
-// };
+class Vertex {
+public:
+    Vector3f position;
+    Vector3f normal;
+    Vector3f color;
+    std::vector<GLuint> boneIndices;
+    std::vector<float> weights;
+    
+};
 
-// #endif // KEYFRAME_ANIMATOR_H
+
+class Bone {
+public:
+    string name;
+    Matrix4f offsetMatrix;
+    std::vector<Bone*>* children;
+    Matrix4f transformation;
+
+    vector<double> positionTimes;
+    vector<Eigen::Vector3f> positionKeys;
+
+    vector<double> rotationTimes;
+    vector<Eigen::Quaternionf> rotationKeys;
+    
+    vector<double> scalingTimes;
+    vector<Eigen::Vector3f> scalingKeys;
+    // std::vector<Vertex> vertices;
+};
+
+
+class Mesh {
+    GLuint VAO=0;
+    GLuint indexCount;
+    std::unordered_map<string, Bone*>* bones;
+    vector<Vertex>* vertices;
+};
+
+
+class Animation {
+public:
+    Mesh* character; // full object
+    double duration;
+    
+};
+
+
+#endif // ANIMATOR_H
