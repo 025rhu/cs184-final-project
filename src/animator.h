@@ -33,7 +33,7 @@ struct Bone {
     // transforms from mesh space to bone space in bind pose (aiBone.mOffsetMatrix)
     Matrix4f offsetMatrix;
     // list of points to all children of this bone in the overall bone hierarchy (aiNode.mChildren)
-    vector<Bone*>* children;
+    vector<Bone*> children;
     // transformation relative to the node's parent at rest (aiNode.mTransformation)
     Matrix4f restLocalTransformation;
     // Vector3f restPosition;
@@ -47,24 +47,24 @@ struct Bone {
 
     // times corresponding to each position key (aiNodeAnim.mPositionKeys[i].mTime)
     std::vector<double> positionTimes;
-    // position keys of this animation channel (aiNodeAnim.mPositionKeys)
+    // position keys of this animation channel in parent's coordinate space (aiNodeAnim.mPositionKeys)
     vector<Eigen::Vector3f> positionKeys;
 
     // times corresponding to each rotation key (aiNodeAnim.mRotationKeys[i].mTime)
     vector<double> rotationTimes;
-    // rotation keys of this animation channel (aiNodeAnim.mRotationKeys)
+    // rotation keys of this animation channel in parent's coodinate space (aiNodeAnim.mRotationKeys)
     vector<Eigen::Quaternionf> rotationKeys;
     
     // times corresponding to each scaling key (aiNodeAnim.mScalingKeys[i].mTime)
     vector<double> scalingTimes;
-    // scaling keys of this animation channel (aiNodeAnim.mScalingKeys)
+    // scaling keys of this animation channel in parent's coordinate space (aiNodeAnim.mScalingKeys)
     vector<Eigen::Vector3f> scalingKeys;
     // vector<Vertex> vertices;
 
 // #################### FUNCTIONS ####################
     void interpolateAt(double time, Matrix4f parentTransform);
 
-private:
+// private:
     Vector3f interpolatePosition(double time) const;
     Eigen::Quaternionf interpolateRotation(double time) const;
     Vector3f interpolateScaling(double time) const;

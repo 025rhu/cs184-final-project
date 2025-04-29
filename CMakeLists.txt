@@ -205,11 +205,15 @@ set(CMAKE_INSTALL_PREFIX "${FinalProject_SOURCE_DIR}/")
 # -----------------------------------------------------------------------------
 add_executable(UnitTests
     tests/test_animator.cpp
+    src/animator.cpp
 )
 
 target_include_directories(UnitTests PRIVATE
     ext/nanogui/include
     ext/nanogui/ext/eigen
+    ext/nanogui/ext/nanovg/src
+    ext/nanogui/ext/glfw/include
+    ext/nanogui/ext/glad/include
     ext/assimp/include
 )
 
