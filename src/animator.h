@@ -9,8 +9,8 @@
 #include <Eigen/Dense>
 #include <vector>
 #include <unordered_map>
-#include <scene.h>
-#include <shader.h>
+#include <assimp/scene.h>
+#include "shader.h"
 
 using namespace nanogui;
 using namespace std;
@@ -43,8 +43,8 @@ struct Bone {
     // Eigen::Quaternionf restRotation;
     // Vector3f restScaling;
 
-    // transformationn relative to the node's parent during the animation (interpolated)
-    // Matrix4f localTransformation;
+    // transformation relative to the node's parent during the animation (interpolated)
+    Matrix4f localTransformation;
     // total transformation of this bone at some time during the animation (interpolated, local * parent)
     Matrix4f globalTransformation;
 
@@ -81,32 +81,47 @@ private:
 
 
 struct Mesh {
-    // variables for rendering purposes
-    GLuint VAO=0;
-    GLuint indexCount;
     // mesh architecture
     unordered_map<string, Bone*>* bones;
     Bone* rootBone;
     vector<Vertex>* vertices;
+    void animateAt(double time);
 
-    void retrieveSceneValues(const aiScene* scene);
-    void animateAt(double time, vector<Eigen::Matrix4f>& boneMatrices);
-    void displayMesh(Shader& shader, const vector<Eigen::Matrix4f>& boneMatrices);
+//     void retrieveSceneValues(const aiScene* scene);
+//     void findFinalBoneMatrices(double time, vector<Eigen::Matrix4f>& boneMatrices);
 
-private:
-    void getBoneMatrices(Bone* bone, const Eigen::Matrix4f& transformation, vector<Eigen::Matrix4f>& boneMatrices);
+// private:
+//     void getBoneMatrices(Bone* bone, const Eigen::Matrix4f& transformation, vector<Eigen::Matrix4f>& boneMatrices);
+
 };
 
 
-struct Animation {
+class Animation {
+public:
+    Animation(Screen* screen);
+
+private:
     Mesh* character; // full object
+    Screen* screen;
     double duration;
+    double startTime = -1.0;
+    // double endTime;
+    // double timestep;
+    // double lastRealTime;
+    // double lastFrameTime;
+    // double realTime;
+    // double frameTime;
+    // double currentTime;
 
-    double startTime;
-    double endTime;
-    double timestep;
+    // variables for rendering purposes
+    GLuint VAO=0;
+    GLuint indexCount;
 
-    void animate();
+// #################### FUNCTIONS ####################
+    void setupDrawCallback();   // used to override nanogui's drawContents() with our own to render our own animation.
+    // void updateTime();
+    void updateMesh(double time);  // update the mesh (bone and vertex positions). will be called about ~60 times per sec
+    void draw();    // draw mesh to GPU
 };
 
 

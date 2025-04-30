@@ -9,9 +9,11 @@
 #include <iostream>
 #include <cmath>
 
+#include "nanogui/common.h"
 #include "shader.h"
 #include "model.h"
 #include "animatedObject.h"
+#include "animator.h"
 
 // Perspective matrix builder
 static Eigen::Matrix4f makePerspective(float fovy, float aspect, float zNear, float zFar) {
@@ -26,7 +28,7 @@ static Eigen::Matrix4f makePerspective(float fovy, float aspect, float zNear, fl
     return mat;
 }
 
-
+// class inherits nanogui::Screen
 class Viewer : public nanogui::Screen {
     public:
         Viewer() : nanogui::Screen(Eigen::Vector2i(1024, 768), "FBX Viewer", true) {
@@ -42,13 +44,16 @@ class Viewer : public nanogui::Screen {
             "../models/bear.fbx",
             });
             if (!ok) std::cerr << "failed to load at least one frame\n";
-            lastTime = glfwGetTime();
+            lastTime = glfwGetTime();    // gets current time for animation delta tracking
+           
         }
 private:
-    GLuint shader = 0;
+    GLuint shader = 0;      // shader program ID
     AnimatedObject anim;
     double lastTime = 0.0;          
-
+    
+    // custom impl of a "look-at" view matrix, equivalent to glm::lookAt()
+    // returns a matrix that transforms world-space points into camera/view space
     Eigen::Matrix4f lookAt(
                         const Eigen::Vector3f& eye,
                         const Eigen::Vector3f& center,
@@ -68,9 +73,10 @@ private:
         return m;
     }
 
+    // key rendering loop. called automatically by nanogui.
     virtual void drawContents() override {
 
-        // timing -- used for animation
+        // timing -- used for animation. updates animation state
         double now = glfwGetTime();
         float dt = float(now - lastTime);
         lastTime = now;
@@ -108,13 +114,29 @@ private:
 };
 
 
-int main()
-{
+// int main()
+// {
+//     nanogui::init();
+//     Viewer* v = new Viewer();
+//     v->setVisible(true);
+//     v->drawAll();                // first frame
+//     nanogui::mainloop();
+//     nanogui::shutdown();
+//     return 0;
+// }
+
+using namespace nanogui;
+
+int main() {
+    // Animation *animation = nullptr;
+    // GLFWwindow *window = nullptr;
     nanogui::init();
-    Viewer* v = new Viewer();
-    v->setVisible(true);
-    v->drawAll();                // first frame
-    nanogui::mainloop();
+    Screen *screen = new Screen(Eigen::Vector2i(1024, 768), "FBX Animation Viewer", true);
+    Animation *animation = new Animation(screen);
+
+    screen->setVisible(true);   // show the window
+    screen->drawAll();          // render first frame
+    nanogui::mainloop();        // do the animation
     nanogui::shutdown();
     return 0;
 }
