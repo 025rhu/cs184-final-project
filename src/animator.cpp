@@ -77,7 +77,7 @@ int Bone::findPositionIndex(double time) const {
     if (time <= positionTimes[0]) {
         return 0;
     }
-    if (time >= positionTimes[-1]){
+    if (time >= positionTimes.back()){
         return positionTimes.size() - 2;
     }
     for (int i = 0; i < positionTimes.size() - 1; i++) {
@@ -97,7 +97,7 @@ int Bone::findRotationIndex(double time) const {
     if (time <= rotationTimes[0]) {
         return 0;
     }
-    if (time >= rotationTimes[-1]){
+    if (time >= rotationTimes.back()){
         return rotationTimes.size() - 2;
     }
     for (int i = 0; i < rotationTimes.size() - 1; i++) {
@@ -117,7 +117,7 @@ int Bone::findScalingIndex(double time) const {
     if (time <= scalingTimes[0]) {
         return 0;
     }
-    if (time >= scalingTimes[-1]){
+    if (time >= scalingTimes.back()){
         return scalingTimes.size() - 2;
     }
     for (int i = 0; i < scalingTimes.size() - 1; i++) {

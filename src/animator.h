@@ -8,6 +8,9 @@
 #include <Eigen/Core>
 #include <Eigen/Dense>
 #include <vector>
+#include <unordered_map>
+#include <scene.h>
+#include <shader.h>
 
 using namespace nanogui;
 using namespace std;
@@ -86,7 +89,12 @@ struct Mesh {
     Bone* rootBone;
     vector<Vertex>* vertices;
 
-    void animateAt(double time);
+    void retrieveSceneValues(const aiScene* scene);
+    void animateAt(double time, vector<Eigen::Matrix4f>& boneMatrices);
+    void displayMesh(Shader& shader, const vector<Eigen::Matrix4f>& boneMatrices);
+
+private:
+    void getBoneMatrices(Bone* bone, const Eigen::Matrix4f& transformation, vector<Eigen::Matrix4f>& boneMatrices);
 };
 
 
