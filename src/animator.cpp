@@ -326,7 +326,7 @@ void Mesh::getBoneMatrices(Bone* bone, vector<Eigen::Matrix4f>& boneMatrices) {
 
 
 void Mesh::animateAt(double time) {
-    std::cout << "[Debug] called animateAt mesh" << std::endl;
+    // std::cout << "[Debug] called animateAt mesh" << std::endl;
 
     if (!rootBone) {
         std::cout << "No root bone" << std::endl;
@@ -336,7 +336,7 @@ void Mesh::animateAt(double time) {
     rootBone->interpolateAt(time, parentTrans);
     boneMatrices.clear();
     getBoneMatrices(rootBone, boneMatrices);
-    std::cout << "[Debug] boneMatrices.size() = " << boneMatrices.size() << std::endl;
+    // std::cout << "[Debug] boneMatrices.size() = " << boneMatrices.size() << std::endl;
 
 }
 
@@ -346,16 +346,12 @@ void Mesh::animateAt(double time) {
 
 
 
-
-
-
-//----------------------------------------------------------------------
-// Constructor: compile skin‐shader, load FBX into `character`, build VAO/EBO
-//----------------------------------------------------------------------
 Animation::Animation(const std::string &fbxPath, const GLuint shader) {
     skinProgram = shader;
     locBoneMatrices = glGetUniformLocation(skinProgram, "uBoneMatrices");
     if (locBoneMatrices == -1) std::cerr << "Could not find uBoneMatrices uniform!" << std::endl;
+    locModel_ = glGetUniformLocation(shader, "uModel");
+
 
 
 
@@ -395,15 +391,14 @@ Animation::~Animation() {
 // Build a VAO that matches your Vertex struct & index array
 //----------------------------------------------------------------------
 void Animation::initMeshBuffers(const aiScene* scene) {
-
-    // glBindVertexArray(0);
     std::vector<Vertex> verts;
     std::vector<unsigned int> indices;
 
+    // Step 1: Load vertex data (positions, normals, colors)
     for (unsigned m = 0; m < scene->mNumMeshes; ++m) {
         const aiMesh* mesh = scene->mMeshes[m];
+        unsigned int vertexBase = verts.size();  // offset for indexing
 
-        // Load vertices
         for (unsigned int v = 0; v < mesh->mNumVertices; ++v) {
             Vertex vert;
 
@@ -415,27 +410,36 @@ void Animation::initMeshBuffers(const aiScene* scene) {
             );
 
             // Normal
-            if (mesh->HasNormals()) {
-                vert.normal = Eigen::Vector3f(
-                    mesh->mNormals[v].x,
-                    mesh->mNormals[v].y,
-                    mesh->mNormals[v].z
-                );
-            } else {
-                vert.normal = Eigen::Vector3f(0, 0, 0);
-            }
+            vert.normal = mesh->HasNormals() ?
+                Eigen::Vector3f(mesh->mNormals[v].x, mesh->mNormals[v].y, mesh->mNormals[v].z) :
+                Eigen::Vector3f(0, 0, 0);
 
-            // Color (optional: here defaulted)
+            // Color (default white)
             vert.color = Eigen::Vector3f(1.0f, 1.0f, 1.0f);
 
-            // Bone weights (optional default)
-            vert.boneIndices.resize(4, 0);  // Assuming up to 4 bones per vertex
+            // Initialize bone data
+            vert.boneIndices.resize(4, 0);
             vert.weights.resize(4, 0.0f);
 
             verts.push_back(vert);
         }
 
-        // Fill bone weights
+        // Step 2: Load indices
+        for (unsigned f = 0; f < mesh->mNumFaces; ++f) {
+            const aiFace& face = mesh->mFaces[f];
+            if (face.mNumIndices != 3) continue;
+            for (int i = 0; i < 3; ++i)
+                indices.push_back(vertexBase + face.mIndices[i]);
+        }
+    }
+
+    // Step 3: Accumulate bone weights per vertex
+    std::vector<std::vector<std::pair<int, float>>> tempWeights(verts.size());
+
+    unsigned int globalVertexOffset = 0;
+    for (unsigned m = 0; m < scene->mNumMeshes; ++m) {
+        const aiMesh* mesh = scene->mMeshes[m];
+
         for (unsigned int b = 0; b < mesh->mNumBones; ++b) {
             const aiBone* bone = mesh->mBones[b];
             std::string boneName = bone->mName.C_Str();
@@ -446,76 +450,79 @@ void Animation::initMeshBuffers(const aiScene* scene) {
             }
 
             for (unsigned int w = 0; w < bone->mNumWeights; ++w) {
-                unsigned int vertexId = bone->mWeights[w].mVertexId;
+                unsigned int vertexId = globalVertexOffset + bone->mWeights[w].mVertexId;
                 float weight = bone->mWeights[w].mWeight;
 
-                Vertex& v = verts[vertexId];
-                for (int i = 0; i < 4; ++i) {
-                    if (v.weights[i] == 0.0f) {
-                        v.boneIndices[i] = boneId;
-                        v.weights[i] = weight;
-                        break;
-                    }
+                if (vertexId < tempWeights.size()) {
+                    tempWeights[vertexId].push_back(std::make_pair(boneId, weight));
                 }
             }
         }
 
-        // Load indices
-        for (unsigned f = 0; f < mesh->mNumFaces; ++f) {
-            const aiFace& face = mesh->mFaces[f];
-            if (face.mNumIndices != 3) continue;
-            indices.push_back(face.mIndices[0]);
-            indices.push_back(face.mIndices[1]);
-            indices.push_back(face.mIndices[2]);
+        globalVertexOffset += mesh->mNumVertices;
+    }
+
+    // Step 4: Choose top 4 weights and normalize
+    for (size_t i = 0; i < verts.size(); ++i) {
+        auto& vw = tempWeights[i];
+        std::sort(vw.begin(), vw.end(), [](const std::pair<int, float>& a, const std::pair<int, float>& b) {
+            return a.second > b.second;
+        });
+
+        float total = 0.0f;
+        size_t count = std::min(vw.size(), size_t(4));
+        for (size_t j = 0; j < count; ++j)
+            total += vw[j].second;
+
+        for (size_t j = 0; j < count; ++j) {
+            verts[i].boneIndices[j] = vw[j].first;
+            verts[i].weights[j]     = total > 0.0f ? vw[j].second / total : 0.0f;
         }
     }
 
+    // Step 5: Upload to GPU
     indexCount = (GLsizei)indices.size();
 
-    // ---- Upload to GPU ----
     GLuint VBO, EBO;
     glGenVertexArrays(1, &VAO);
     glGenBuffers(1, &VBO);
     glGenBuffers(1, &EBO);
     glBindVertexArray(VAO);
 
-    // Upload vertices
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
     glBufferData(GL_ARRAY_BUFFER, verts.size() * sizeof(Vertex), verts.data(), GL_STATIC_DRAW);
 
-    // Upload indices
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), indices.data(), GL_STATIC_DRAW);
 
-    // Attribute pointers
     constexpr GLsizei S = sizeof(Vertex);
-    glEnableVertexAttribArray(0); // position
+    glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, S, (void*)offsetof(Vertex, position));
 
-    glEnableVertexAttribArray(1); // normal
+    glEnableVertexAttribArray(1);
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, S, (void*)offsetof(Vertex, normal));
 
-    glEnableVertexAttribArray(2); // color
+    glEnableVertexAttribArray(2);
     glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, S, (void*)offsetof(Vertex, color));
 
-    glEnableVertexAttribArray(3); // bone indices
+    glEnableVertexAttribArray(3);
     glVertexAttribIPointer(3, 4, GL_UNSIGNED_INT, S, (void*)offsetof(Vertex, boneIndices));
 
-    glEnableVertexAttribArray(4); // weights
+    glEnableVertexAttribArray(4);
     glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, S, (void*)offsetof(Vertex, weights));
 
     glBindVertexArray(0);
 
-    // ####### BONE MATRIX HANDLING ########
-    std::cout << "Drawing mesh..." << std::endl;
-    std::cout << "indexCount = " << indexCount << std::endl;
-    std::cout << "VAO = " << VAO << std::endl;
-    std::cout << "Shader = " << skinProgram << std::endl;
+    // Step 6: Upload initial bone transforms (pose = 0)
+    character->animateAt(0.0);
+    const auto& boneMatrices = character->boneMatrices;
+    glUseProgram(skinProgram);
+    glUniformMatrix4fv(locBoneMatrices, (GLsizei)boneMatrices.size(), GL_FALSE, boneMatrices.data()->data());
+    glUseProgram(0);
 
-    this->draw();
-    cout << "finished initializing buffers" << endl;
-
+    std::cout << "[Info] Buffers initialized: " << verts.size() << " vertices, " << indices.size() / 3 << " triangles.\n";
 }
+
 
 
 //----------------------------------------------------------------------
@@ -533,7 +540,7 @@ void Animation::draw() {
     if (!character) return;
 
     const auto &bones = character->boneMatrices;
-    std::cout << "[Debug] uploading " << bones.size() << " bone matrices\n";
+    // std::cout << "[Debug] uploading " << bones.size() << " bone matrices\n";
 
     glUseProgram(skinProgram); // <-- ensure it's bound here
     glBindVertexArray(VAO);
@@ -545,11 +552,16 @@ void Animation::draw() {
         std::cerr << "[Error] indexCount is 0!" << std::endl;
         return;
     }
+
+    Eigen::Matrix4f modelMatrix = Eigen::Matrix4f::Identity();
+    glUniformMatrix4fv(locModel_, 1, GL_FALSE, modelMatrix.data());
+
     
     glUniformMatrix4fv(locBoneMatrices,
                        (GLsizei)bones.size(),
                        GL_FALSE,
                        bones.data()->data());
+                       
     GLenum err = glGetError();
     if (err != GL_NO_ERROR) {
         std::cerr << "[GL ERROR] glUniformMatrix4fv failed: 0x" << std::hex << err << std::dec << std::endl;

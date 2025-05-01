@@ -136,6 +136,7 @@ Animation(const std::string &fbxPath, const GLuint shader);
 
     Mesh* character;      // your mesh + bone hierarchy
     double startTime = -1;
+
     // need to be stored for rendering lol wt
     // GLuint shader;
 
@@ -143,7 +144,7 @@ private:
     // skin‐shader program
     GLuint skinProgram;
     GLint locBoneMatrices;     // uniform location for uBoneMatrices[]
-
+    GLuint locModel_;
     // VAO + how many indices to draw
     GLuint VAO;
     GLsizei indexCount;

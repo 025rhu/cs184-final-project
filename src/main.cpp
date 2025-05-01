@@ -47,7 +47,14 @@ class Viewer : public nanogui::Screen {
 
 
             // create view and projection matrix - this won't change! 
-            viewMatrix_ = lookAt({0, 0, 5}, {0, 0, 0}, {0, 1, 0});
+            // viewMatrix_ = lookAt({0, 0, 5}, {0, 0, 0}, {0, 1, 0});
+            // viewMatrix_ = lookAt({0, 2, 5}, {0, 1, 0}, {0, 1, 0});
+            // viewMatrix_ = lookAt({5, 2, 0}, {0, 1, 0}, {0, 1, 0});
+            // viewMatrix_ = lookAt({5, 2, 0}, {0, 1, 0}, {0, 1, 0});
+            viewMatrix_ = lookAt({0, 10, 0}, {0, 0, 0}, {0, 0, 1});
+
+
+
             float aspect = float(mSize.x())/float(mSize.y());
             projMatrix_ = makePerspective(45.0f * M_PI / 180.0f, aspect, 0.1f, 100.0f);
 
@@ -91,6 +98,9 @@ class Viewer : public nanogui::Screen {
             // Set model matrix — identity for now
             Eigen::Matrix4f modelMatrix = Eigen::Matrix4f::Identity();
             glUniformMatrix4fv(locModel_, 1, GL_FALSE, modelMatrix.data());
+            glUniformMatrix4fv(locView_,  1, GL_FALSE, viewMatrix_.data());
+            glUniformMatrix4fv(locProj_,  1, GL_FALSE, projMatrix_.data());
+
         
             // Advance animation time
             double now = glfwGetTime();
@@ -136,9 +146,9 @@ int main() {
 
 
     screen->animation = anim;
-    Eigen::Vector3f min = anim->character->bboxMin;
-    Eigen::Vector3f max = anim->character->bboxMax;
-    screen->setCameraFromBoundingBox(min, max);
+    // Eigen::Vector3f min = anim->character->bboxMin;
+    // Eigen::Vector3f max = anim->character->bboxMax;
+    // screen->setCameraFromBoundingBox(min, max);
     screen->setVisible(true);
     screen->drawAll();
     nanogui::mainloop();
