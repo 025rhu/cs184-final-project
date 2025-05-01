@@ -111,40 +111,35 @@ private:
 
 class Animation {
 public:
-    Animation(Screen* screen);
-    Animation();
-    
+    Animation(const std::string &fbxPath);
     ~Animation();
-    double startTime = -1.0;
-    Mesh* character; // full object
-    void draw(vector<Matrix4f>* boneMatrices);    // draw mesh to GPU
 
-    
+    // Advance the skeleton to the given time (in seconds)
+    void animateAt(double time);
+
+    // Draw the skinned mesh.  
+    // Caller must have already done:
+    //    glUseProgram(shaderID);
+    //    glUniformMatrix4fv(uM), uV, uP
+    // before invoking draw().
+    void draw(const std::vector<Eigen::Matrix4f> &boneMatrices);
+
+    Mesh* character;      // your mesh + bone hierarchy
+    double startTime = -1;
 
 private:
-    Screen* screen;
+    // skin‐shader program
     GLuint skinProgram;
-    // double duration;
-    Matrix4f projectionMatrix;
-    Matrix4f viewMatrix;
-    // Shader skinShader;
+    GLint loc_uBones;     // uniform location for uBoneMatrices[]
 
-    
-    // double endTime;
-    // double timestep;
-    // double lastRealTime;
-    // double lastFrameTime;
-    // double realTime;
-    // double frameTime;
-    // double currentTime;
+    // VAO + how many indices to draw
+    GLuint VAO;
+    GLsizei indexCount;
 
-    // variables for rendering purposes
-   
-
-// #################### FUNCTIONS ####################
-    void setupDrawCallback();   // used to override nanogui's drawContents() with our own to render our own animation.
-    // void updateTime();
-    // void updateMesh(double time);  // update the mesh (bone and vertex positions). will be called about ~60 times per sec
+    // Helpers
+    void initShader(const std::string &vs = "shaders/Default.vert",
+                    const std::string &fs = "shaders/Default.frag");
+    void initMeshBuffers();
 };
 
 
