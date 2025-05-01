@@ -19,20 +19,65 @@
 // NEW FRAMEWORK YALL!
 // MAIN WILL ONLY SET UP THE SCREEN
 // ANIMATION WILL SET UP THE PROPER CAMERAS, PERSPECTIVES, ETC.
+
+// class Viewer : public nanogui::Screen {
+//     public:
+//         Viewer() : nanogui::Screen(Eigen::Vector2i(1024, 768), "My App", true) {
+//             // init stuff
+//         }
+    
+//         virtual void drawContents() override {
+//             // your custom draw code
+//             animation.animate();
+//             animation.draw();
+//         }
+    
+//     private:
+//         Animation animation;
+//     };
+
+class Viewer : public nanogui::Screen {
+    public:
+    Viewer(Animation* animation)
+            : nanogui::Screen(Eigen::Vector2i(1024, 768), "Viewer", true),
+                animation(animation) {}
+
+        void drawContents() override {
+            double now = glfwGetTime();
+            if (animation->startTime < 0.0)
+                animation->startTime = now;
+
+            double t = now - animation->startTime;
+            animation->character->animateAt(t);
+            animation->draw(&animation->character->boneMatrices);
+        }
+
+    private:
+        Animation* animation;
+};
+    
+
+
 int main() {
+    // nanogui::init();
+    // // Create a Screen that won’t do any drawing by itself:
+    // nanogui::Screen *screen =
+    //   new nanogui::Screen({1024,768}, "FBX Animation Viewer", true);
+
+    // // Give that Screen to your Animation, which will install its own draw callback
+    // Animation *anim = new Animation(screen);
+
+    // screen->setVisible(true);
+    // screen->drawAll();    // first frame
+    // nanogui::mainloop();  // drives your callback every frame
+    // nanogui::shutdown();
+    // return 0;
     nanogui::init();
-    // Create a Screen that won’t do any drawing by itself:
-    nanogui::Screen *screen =
-      new nanogui::Screen({1024,768}, "FBX Animation Viewer", true);
-
-    // Give that Screen to your Animation, which will install its own draw callback
-    Animation *anim = new Animation(screen);
-
+    Animation* anim = new Animation(); // or however you construct it
+    Viewer* screen = new Viewer(anim);
     screen->setVisible(true);
-    screen->drawAll();    // first frame
-    nanogui::mainloop();  // drives your callback every frame
-    nanogui::shutdown();
-    return 0;
+    screen->drawAll();
+    nanogui::mainloop();
 }
 
 

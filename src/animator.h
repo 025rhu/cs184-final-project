@@ -112,19 +112,21 @@ private:
 class Animation {
 public:
     Animation(Screen* screen);
+    Animation();
     
     ~Animation();
+    double startTime = -1.0;
+    Mesh* character; // full object
+    void draw(vector<Matrix4f>* boneMatrices);    // draw mesh to GPU
 
     
 
 private:
-    Mesh* character; // full object
     Screen* screen;
     GLuint skinProgram;
     // double duration;
     Matrix4f projectionMatrix;
     Matrix4f viewMatrix;
-    double startTime = -1.0;
     // Shader skinShader;
 
     
@@ -143,7 +145,6 @@ private:
     void setupDrawCallback();   // used to override nanogui's drawContents() with our own to render our own animation.
     // void updateTime();
     // void updateMesh(double time);  // update the mesh (bone and vertex positions). will be called about ~60 times per sec
-    void draw(vector<Matrix4f>* boneMatrices);    // draw mesh to GPU
 };
 
 
