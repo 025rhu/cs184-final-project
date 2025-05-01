@@ -21,14 +21,15 @@ struct Vertex {
     Vector3f normal;
     Vector3f color;
     vector<GLuint> boneIndices;
-    vector<float> weights;
-    
+    vector<float> weights;  
 };
 
 
 struct Bone {
     Bone() {};
     ~Bone();
+
+    int id;
 
 // #################### ATTRIBUTES ####################
     // identifier for this bone (aiBone.mName)
@@ -77,15 +78,19 @@ private:
     int findScalingIndex(double time) const;
 
     Matrix4f buildLocalTransform(double time);
+
 };
 
 
 struct Mesh {
     // mesh architecture
-    unordered_map<string, Bone*>* bones;
+    std::vector<Bone*> bones;
+    std::vector<Matrix4f> boneMatrices;
+    // unordered_map<string, Bone*>* bones;
     Bone* rootBone;
     vector<Vertex>* vertices;
     void animateAt(double time);
+    vector<Matrix4f>* getBoneMatrices();
 
 //     void retrieveSceneValues(const aiScene* scene);
 //     void findFinalBoneMatrices(double time, vector<Eigen::Matrix4f>& boneMatrices);
@@ -120,8 +125,8 @@ private:
 // #################### FUNCTIONS ####################
     void setupDrawCallback();   // used to override nanogui's drawContents() with our own to render our own animation.
     // void updateTime();
-    void updateMesh(double time);  // update the mesh (bone and vertex positions). will be called about ~60 times per sec
-    void draw();    // draw mesh to GPU
+    // void updateMesh(double time);  // update the mesh (bone and vertex positions). will be called about ~60 times per sec
+    void draw(vector<Matrix4f>* boneMatrices);    // draw mesh to GPU
 };
 
 

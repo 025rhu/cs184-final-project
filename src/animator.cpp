@@ -141,61 +141,78 @@ Matrix4f Bone::buildLocalTransform(double time) {
     return (Eigen::Translation3f(posTransform) * rotateTransform * Eigen::Scaling(scaleTransform)).matrix();
 }
 
-void Mesh::retrieveSceneValues(const aiScene* scene) {
-    bones = new unordered_map<string, Bone*>();
-    for (int i = 0; i < scene->mNumMeshes; i++) {
-        const aiMesh* currMesh = scene->mMeshes[i];
-        for (int j = 0; j < currMesh->mNumBones; j++) {
-            const aiBone* currBone = currMesh->mBones[j];
-            Bone* b = new Bone();
-            b->name = currBone->mName;
-            b->offsetMatrix = Map<Matrix4f>((float*)currBone->mOffsetMatrix[0]).transpose();
-            (*bones)[b->name] = b;
-        }
+
+
+// void Mesh::retrieveSceneValues(const aiScene* scene) {
+//     bones = new unordered_map<string, Bone*>();
+//     for (int i = 0; i < scene->mNumMeshes; i++) {
+//         const aiMesh* currMesh = scene->mMeshes[i];
+//         for (int j = 0; j < currMesh->mNumBones; j++) {
+//             const aiBone* currBone = currMesh->mBones[j];
+//             Bone* b = new Bone();
+//             b->name = currBone->mName;
+//             b->offsetMatrix = Map<Matrix4f>((float*)currBone->mOffsetMatrix[0]).transpose();
+//             (*bones)[b->name] = b;
+//         }
+//     }
+
+//     // loading keyframe data for bones
+//     const aiAnimation* currAnimation = scene->mAnimations[0];
+//     duration = currAnimation->duration;
+//     // todo: set other attributes of animation?
+
+//     for (int i = 0; i < currAnimation->mNumChannels; i++) {
+//         const aiNodeAnim* currChannel = currAnimation->mChannels[i];
+//         Bone* b = (*bones)[currChannel->mNodeName];
+
+//         b->positionKeys.resize(currChannel->mNumPositionKeys);
+//         b->positionTimes.resize(currChannel->mNumPositionKeys);
+//         for (int j = 0; j < currChannel->mNumPositionKeys; j++) {
+//             b->positionKeys[j] = Vector3f(currChannel->mPositionKeys[j].mValue.x, currChannel->mPositionKeys[j].mValue.y, currChannel->mPositionKeys[j].mValue.z);
+//             b->positionTimes[j] = currChannel->mPositionKeys[j].mTime;
+//         }
+
+//         b->rotationKeys.resize(currChannel->mNumRotationKeys);
+//         b->rotationTimes.resize(currChannel->mNumRotationKeys);
+//         for (int j = 0; j < currChannel->mNumRotationKeys; j++) {
+//             b->rotationKeys[j] = Eigen::Quaternionf(currChannel->mRotationKeys[j].mValue.w, currChannel->mRotationKeys[j].mValue.x, currChannel->mRotationKeys[j].mValue.y, currChannel->mRotationKeys[j].mValue.z);
+//             b->rotationTimes[j] = currChannel->mRotationKeys[j].mTime;
+//         }
+
+//         b->scalingKeys.resize(currChannel->mNumScalingKeys);
+//         b->scalingTimes.resize(currChannel->mNumScalingKeys);
+//         for (int j = 0; j < currChannel->mNumScalingKeys; j++) {
+//             b->scalingKeys[j] = Vector3f(currChannel->mNumScalingKeys[j].mValue.x, currChannel->mNumScalingKeys[j].mValue.y, currChannel->mNumScalingKeys[j].mValue.z);
+//             b->scalingTimes[j] = currChannel->mNumScalingKeys[j].mTime;
+//         }
+//     }
+
+
+// }
+
+
+
+// // finding final bone matrices to help with skinning for animation
+vector<Matrix4f>* Mesh::getBoneMatrices() {
+    vector<Matrix4f>* boneMatrices = new vector<Matrix4f>;
+    for (int i = 0; i < bones.size(); i ++) {
+        boneMatrices[i] = {bones[i]->globalTransformation * bones[i]->offsetMatrix};
     }
-
-    // loading keyframe data for bones
-    const aiAnimation* currAnimation = scene->mAnimations[0];
-    duration = currAnimation->duration;
-    // todo: set other attributes of animation?
-
-    for (int i = 0; i < currAnimation->mNumChannels; i++) {
-        const aiNodeAnim* currChannel = currAnimation->mChannels[i];
-        Bone* b = (*bones)[currChannel->mNodeName];
-
-        b->positionKeys.resize(currChannel->mNumPositionKeys);
-        b->positionTimes.resize(currChannel->mNumPositionKeys);
-        for (int j = 0; j < currChannel->mNumPositionKeys; j++) {
-            b->positionKeys[j] = Vector3f(currChannel->mPositionKeys[j].mValue.x, currChannel->mPositionKeys[j].mValue.y, currChannel->mPositionKeys[j].mValue.z);
-            b->positionTimes[j] = currChannel->mPositionKeys[j].mTime;
-        }
-
-        b->rotationKeys.resize(currChannel->mNumRotationKeys);
-        b->rotationTimes.resize(currChannel->mNumRotationKeys);
-        for (int j = 0; j < currChannel->mNumRotationKeys; j++) {
-            b->rotationKeys[j] = Eigen::Quaternionf(currChannel->mRotationKeys[j].mValue.w, currChannel->mRotationKeys[j].mValue.x, currChannel->mRotationKeys[j].mValue.y, currChannel->mRotationKeys[j].mValue.z);
-            b->rotationTimes[j] = currChannel->mRotationKeys[j].mTime;
-        }
-
-        b->scalingKeys.resize(currChannel->mNumScalingKeys);
-        b->scalingTimes.resize(currChannel->mNumScalingKeys);
-        for (int j = 0; j < currChannel->mNumScalingKeys; j++) {
-            b->scalingKeys[j] = Vector3f(currChannel->mNumScalingKeys[j].mValue.x, currChannel->mNumScalingKeys[j].mValue.y, currChannel->mNumScalingKeys[j].mValue.z);
-            b->scalingTimes[j] = currChannel->mNumScalingKeys[j].mTime;
-        }
-    }
-
-
-}
-// finding final bone matrices to help with skinning for animation
-void Mesh::findFinalBoneMatrices(double time, vector<Eigen::Matrix4f>& boneMatrices) {
-    
+    return boneMatrices;
 }
 
 
+void Animation::draw(vector<Matrix4f>* boneMatrices) {
+    // glUseProgram(shader);
 
-void Animation::updateMesh(double time) {
-    
+    // Update uBoneMatrices before drawing
+    // glUniformMatrix4fv(
+    //     uBoneMatricesLoc,
+    //     boneMatrices->size(),
+    //     GL_FALSE,
+    //     boneMatrices[0].data()
+    // );
+
 }
 
 
@@ -207,7 +224,7 @@ void Animation::setupDrawCallback() {
     }
 
     double time = now - startTime;
-    // TODO: CALL MESH'S ANIMATE FUNCTION WITH THIS TIME
     this->character->animateAt(time);
-    draw();
+    vector<Matrix4f>* boneMatrices = this->character->getBoneMatrices();
+    draw(boneMatrices);
 }
