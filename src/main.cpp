@@ -31,15 +31,12 @@ class Viewer : public nanogui::Screen {
     public:
         Viewer() : nanogui::Screen(Eigen::Vector2i(1024, 768), "FBX Viewer", true) {
             // Load and compile shaders
-            shader = createShaderProgram("shaders/Default.vert", "shaders/Default.frag");
-
-            // OpenGL config
+            shader = createShaderProgram("../shaders/min.vert", "../shaders/flat.frag");
+            
             glEnable(GL_DEPTH_TEST);
             anim.secondsPerFrame = 0.5f;          // 10 fps
             bool ok = anim.load({
-            "../models/bear.fbx",
-            "../models/bear_frame0.fbx",
-            "../models/bear.fbx",
+            "../bear_1.fbx",
             });
             if (!ok) std::cerr << "failed to load at least one frame\n";
             lastTime = glfwGetTime();
@@ -69,40 +66,35 @@ private:
     }
 
     virtual void drawContents() override {
-
-        // timing -- used for animation
         double now = glfwGetTime();
         float dt = float(now - lastTime);
         lastTime = now;
         anim.update(dt);
 
-
-
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glUseProgram(shader);
 
-        // Matrices
+        float t = float(glfwGetTime());
+        GLint locTime = glGetUniformLocation(shader, "uTime");
+        if (locTime != -1)
+            glUniform1f(locTime, t);
+
         Eigen::Matrix4f model = Eigen::Matrix4f::Identity();
         // Eigen::Matrix4f view = Eigen::Matrix4f::Identity();
         Eigen::Matrix4f view =
         lookAt(/*eye   */ { 0.0f, 10.0f, 0.0f },   //  ➜ from +Y
             /*center*/ { 0.0f, -1.4f, 0.0f },
             /*up    */ { 0.0f, 0.0f, 1.0f });
-        // view(2, 3) = -175.0f;
-        //view(2, 3) = -5.0f;
         model(2, 3) = -1.4f;
         float aspect = (float)mSize.x() / (float)mSize.y();
         Eigen::Matrix4f proj = makePerspective(45.0f * M_PI / 180.0f, aspect, 0.1f, 100.0f);
 
-        // Upload uniforms
-        GLint locModel = glGetUniformLocation(shader, "uM");
-        GLint locView  = glGetUniformLocation(shader, "uV");
-        GLint locProj  = glGetUniformLocation(shader, "uP");
 
-        glUniformMatrix4fv(locModel, 1, GL_FALSE, model.data());
-        glUniformMatrix4fv(locView,  1, GL_FALSE, view.data());
-        glUniformMatrix4fv(locProj,  1, GL_FALSE, proj.data());
+        glUniformMatrix4fv(glGetUniformLocation(shader,"uM"),1,GL_FALSE,model.data());
+        glUniformMatrix4fv(glGetUniformLocation(shader,"uV"),1,GL_FALSE,view.data());
+        glUniformMatrix4fv(glGetUniformLocation(shader,"uP"),1,GL_FALSE,proj.data());
+
         anim.draw();
     }
 };
