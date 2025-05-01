@@ -1,23 +1,29 @@
 #include "animator.h"
 #include "Eigen/src/Geometry/Quaternion.h"
+#include "GLFW/glfw3.h"
 #include "nanogui/common.h"
 #include <iostream>
+#include <string>
+#include <unordered_map>
 #include <vector>
+#include "shader.h"
+#include <assimp/Importer.hpp>
+#include <assimp/postprocess.h>
+#include <assimp/scene.h>
 // #include <glad/glad.h>
 // #include "CGL/CGL.h"
 // #include <CGL/vector3D.h>
-// #include <iostream>
 // #include <set>
-// #include <string>
 // #include "nanogui/glutil.h"
 // #include "utils.h"
 
 
 using namespace std;
 
-void Bone::interpolateAt(double time, Matrix4f parentTransform) {
+void Bone::interpolateAt(double time, Matrix4f &parentTransform) {
     Matrix4f localTransform = buildLocalTransform(time);
     Matrix4f globalTransform = localTransform * parentTransform;    // try parent * local if this looks wonky
+    this->localTransformation = localTransform;
     this->globalTransformation = globalTransform;
     
     for (auto child : *children) {
@@ -77,7 +83,7 @@ int Bone::findPositionIndex(double time) const {
     if (time <= positionTimes[0]) {
         return 0;
     }
-    if (time >= positionTimes[-1]){
+    if (time >= positionTimes.back()){
         return positionTimes.size() - 2;
     }
     for (int i = 0; i < positionTimes.size() - 1; i++) {
@@ -97,7 +103,7 @@ int Bone::findRotationIndex(double time) const {
     if (time <= rotationTimes[0]) {
         return 0;
     }
-    if (time >= rotationTimes[-1]){
+    if (time >= rotationTimes.back()){
         return rotationTimes.size() - 2;
     }
     for (int i = 0; i < rotationTimes.size() - 1; i++) {
@@ -117,7 +123,7 @@ int Bone::findScalingIndex(double time) const {
     if (time <= scalingTimes[0]) {
         return 0;
     }
-    if (time >= scalingTimes[-1]){
+    if (time >= scalingTimes.back()){
         return scalingTimes.size() - 2;
     }
     for (int i = 0; i < scalingTimes.size() - 1; i++) {
@@ -136,165 +142,316 @@ Matrix4f Bone::buildLocalTransform(double time) {
 
     return (Eigen::Translation3f(posTransform) * rotateTransform * Eigen::Scaling(scaleTransform)).matrix();
 }
-// KeyFrameAnimator::KeyFrameAnimator(std::string project_root, Screen *screen)
-// : m_project_root(project_root) {
-//   this->screen = screen;
-  
-//   this->loadShaders();
-// //   this->load_textures();
 
-// //   glEnable(GL_PROGRAM_POINT_SIZE);
-//   // enables depth buffering so closer objects occlude further ones correctly
-//   glEnable(GL_DEPTH_TEST);
+// Mesh::Mesh()
+//   : bones(new unordered_map<string, Bone*>()),
+//     rootBone(nullptr),
+//     vertices(nullptr),
+//     duration(0.0),
+//     VAO(0),
+//     indexCount(0)
+// {}
+
+// Mesh::~Mesh() {
+//     for (auto &p : *bones) delete p.second;
+//     delete bones;
+//     delete vertices;
+// }
+
+void Mesh::retrieveSceneValues(const aiScene* scene) {
+    bones = new unordered_map<string, Bone*>();
+    int curr = 0;
+    for (int i = 0; i < scene->mNumMeshes; i++) {
+        const aiMesh* currMesh = scene->mMeshes[i];
+        for (int j = 0; j < currMesh->mNumBones; j++) {
+            const aiBone* currBone = currMesh->mBones[j];
+            Bone* b = new Bone();
+            curr += 1;
+            b->id = curr;
+            b->name = currBone->mName.C_Str();
+            b->offsetMatrix = Eigen::Map<Eigen::Matrix4f>((float*)currBone->mOffsetMatrix[0]).transpose();
+            (*bones)[b->name] = b;
+        }
+    }
+
+    // loading keyframe data for bones
+    const aiAnimation* currAnimation = scene->mAnimations[0];
+    duration = currAnimation->mDuration;
+    double ticksPerSecond = currAnimation->mTicksPerSecond;
+
+    for (int i = 0; i < currAnimation->mNumChannels; i++) {
+        const aiNodeAnim* currChannel = currAnimation->mChannels[i];
+        Bone* b = (*bones)[currChannel->mNodeName.C_Str()];
+
+        b->positionKeys.resize(currChannel->mNumPositionKeys);
+        b->positionTimes.resize(currChannel->mNumPositionKeys);
+        for (int j = 0; j < currChannel->mNumPositionKeys; j++) {
+            b->positionKeys[j] = Vector3f(currChannel->mPositionKeys[j].mValue.x, currChannel->mPositionKeys[j].mValue.y, currChannel->mPositionKeys[j].mValue.z);
+            b->positionTimes[j] = currChannel->mPositionKeys[j].mTime;
+        }
+
+        b->rotationKeys.resize(currChannel->mNumRotationKeys);
+        b->rotationTimes.resize(currChannel->mNumRotationKeys);
+        for (int j = 0; j < currChannel->mNumRotationKeys; j++) {
+            b->rotationKeys[j] = Eigen::Quaternionf(currChannel->mRotationKeys[j].mValue.w, currChannel->mRotationKeys[j].mValue.x, currChannel->mRotationKeys[j].mValue.y, currChannel->mRotationKeys[j].mValue.z);
+            b->rotationTimes[j] = currChannel->mRotationKeys[j].mTime;
+        }
+
+        b->scalingKeys.resize(currChannel->mNumScalingKeys);
+        b->scalingTimes.resize(currChannel->mNumScalingKeys);
+        for (int j = 0; j < currChannel->mNumScalingKeys; j++) {
+            b->scalingKeys[j] = Vector3f(currChannel->mScalingKeys[j].mValue.x, currChannel->mScalingKeys[j].mValue.y, currChannel->mScalingKeys[j].mValue.z);
+            b->scalingTimes[j] = currChannel->mScalingKeys[j].mTime;
+        }
+
+        buildBoneHierarchy(scene->mRootNode, nullptr);
+    }
+
+}
+
+void Mesh::buildBoneHierarchy(const aiNode* node, Bone* parent) {
+    auto curr = bones->find(node->mName.C_Str());
+
+    Bone* b = nullptr;
+    if (curr != bones->end()) {
+        b = curr->second;
+    }
+    if (b) {
+        b->restLocalTransformation = Eigen::Map<Eigen::Matrix4f>((float*)node->mTransformation[0]).transpose();
+        if (parent) {
+            parent->children->push_back(b);
+        } else {
+            rootBone = b;
+        }
+        parent = b;
+    }
+    for (int i = 0; i < node->mNumChildren; i++) {
+        buildBoneHierarchy(node->mChildren[i], parent);
+    }
+}
+
+
+void Mesh::findFinalBoneMatrices(double time,vector<Eigen::Matrix4f>& boneMatrices) {
+    if (!rootBone) {
+        return;
+    } 
+    Matrix4f parentTrans = Eigen::Matrix4f::Identity();
+    rootBone->interpolateAt(time, parentTrans);
+    boneMatrices.clear();
+    getBoneMatrices(rootBone, boneMatrices);
+}
+
+void Mesh::getBoneMatrices(Bone* bone, vector<Eigen::Matrix4f>& boneMatrices) {
+    boneMatrices.push_back(bone->globalTransformation * bone->offsetMatrix);
+    for (auto *c : *bone->children) {
+        getBoneMatrices(c, boneMatrices);
+    }
+}
+
+void Mesh::animateAt(double time) {
+    findFinalBoneMatrices(time * ticksPerSecond, boneMatrices);
+}
+
+
+
+
+
+
+//----------------------------------------------------------------------
+// Constructor: compile skin‐shader, load FBX into `character`, build VAO/EBO
+//----------------------------------------------------------------------
+Animation::Animation(const std::string &fbxPath) {
+    // 1) compile + link your default.vert / default.frag
+    initShader();
+
+    // 2) load your model via Assimp into Mesh*
+    Assimp::Importer importer;
+    const aiScene* scene = importer.ReadFile(fbxPath,
+        aiProcess_Triangulate |
+        aiProcess_GenSmoothNormals |
+        aiProcess_JoinIdenticalVertices);
+    if (!scene) {
+        std::cerr << "FBX load error: " << importer.GetErrorString() << std::endl;
+        character = nullptr;
+        return;
+    }
+    character = new Mesh();
+    character->retrieveSceneValues(scene);
+
+    // 3) build the VAO/VBO/EBO from character->vertices and your index list
+    initMeshBuffers();
+
+    glEnable(GL_DEPTH_TEST);
+}
+
+Animation::~Animation() {
+    delete character;
+    glDeleteProgram(skinProgram);
+    glDeleteVertexArrays(1, &VAO);
+    // (also delete any VBO/EBO you generated if you stored them)
+}
+
+//----------------------------------------------------------------------
+// Compile & link, then cache the uniform location for your bone array
+//----------------------------------------------------------------------
+void Animation::initShader(const std::string &vs, const std::string &fs) {
+    skinProgram = createShaderProgram(vs, fs);
+    loc_uBones  = glGetUniformLocation(skinProgram, "uBoneMatrices");
+}
+
+//----------------------------------------------------------------------
+// Build a VAO that matches your Vertex struct & index array
+//----------------------------------------------------------------------
+void Animation::initMeshBuffers() {
+    // assume your Mesh has:
+    //   std::vector<Vertex> *vertices;
+    //   std::vector<unsigned int>   indices;   // you must fill this
+    auto &verts = *character->vertices;
+    std::vector<unsigned int> indices;
+    // TODO: fill 'indices' from your aiMesh data (e.g. loop over scene->mMeshes)
+
+    indexCount = (GLsizei)indices.size();
+
+    GLuint VBO, EBO;
+    glGenVertexArrays(1, &VAO);
+    glGenBuffers(1, &VBO);
+    glGenBuffers(1, &EBO);
+
+    glBindVertexArray(VAO);
+
+    // upload vertex data
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glBufferData(GL_ARRAY_BUFFER,
+                 verts.size() * sizeof(Vertex),
+                 verts.data(),
+                 GL_STATIC_DRAW);
+
+    // upload index data
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER,
+                 indices.size() * sizeof(unsigned int),
+                 indices.data(),
+                 GL_STATIC_DRAW);
+
+    // set up layout to match your default.vert:
+    //   layout(0) in vec3 in_position;
+    //   layout(1) in vec3 in_normal;
+    //   layout(2) in vec3 in_color;
+    //   (and, if you have boneIndices/weights, pick locations 3 and 4)
+    constexpr GLsizei S = sizeof(Vertex);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, S,
+                          (void*)offsetof(Vertex, position));
+
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, S,
+                          (void*)offsetof(Vertex, normal));
+
+    glEnableVertexAttribArray(2);
+    glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, S,
+                          (void*)offsetof(Vertex, color));
+
+    // …if you have boneIndices (as GLuint[4]) and weights (float[4]):
+    glEnableVertexAttribArray(3);
+    glVertexAttribIPointer(3, 4, GL_UNSIGNED_INT, S,
+                           (void*)offsetof(Vertex, boneIndices));
+
+    glEnableVertexAttribArray(4);
+    glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, S,
+                          (void*)offsetof(Vertex, weights));
+
+    glBindVertexArray(0);
+}
+
+//----------------------------------------------------------------------
+// Advance your mesh’s bone matrices
+//----------------------------------------------------------------------
+void Animation::animateAt(double time) {
+    if (character) {
+        character->animateAt(time);
+    }
+}
+
+//----------------------------------------------------------------------
+// Draw the skinned mesh: upload bone array, bind VAO, issue draw
+//----------------------------------------------------------------------
+void Animation::draw(const std::vector<Eigen::Matrix4f> &boneMatrices) {
+    if (!character) return;
+
+    // assume the caller already did glUseProgram(skinProgram),
+    // and uploaded uM, uV, uP.
+
+    // upload all bone transforms in one call:
+    glUniformMatrix4fv(loc_uBones,
+                       (GLsizei)boneMatrices.size(),
+                       GL_FALSE,
+                       boneMatrices.data()->data());
+
+    // draw
+    glBindVertexArray(VAO);
+    glDrawElements(GL_TRIANGLES, indexCount, GL_UNSIGNED_INT, nullptr);
+    glBindVertexArray(0);
+}
+
+
+}
+
+// Animation::Animation(nanogui::Screen *screen)
+// {
+//     skinProgram = createShaderProgram("./shaders/Default.vert", "./shaders/Default.frag");
+
 // }
 
 
-// KeyFrameAnimator::~KeyFrameAnimator() {
-//     // for (auto shader : shaders) {
-//     shader->free();
-//     // }
-//     // glDeleteTextures(1, &m_gl_texture_1);
-//     // glDeleteTextures(1, &m_gl_texture_2);
-//     // glDeleteTextures(1, &m_gl_texture_3);
-//     // glDeleteTextures(1, &m_gl_texture_4);
-//     // glDeleteTextures(1, &m_gl_texture_5);
-  
-//     // glDeleteTextures(1, &m_gl_cubemap_tex);
-  
-//     // if (cloth) delete cloth;
-//     // if (cp) delete cp;
-//     // if (collision_objects) delete collision_objects;
-//     // TODO: add code to free the object
-//   }
+
+// void Animation::draw(vector<Matrix4f>* boneMatrices) {
+//     // WRONGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG
+//     // glUseProgram(skinProgram);
 
 
-// /**
-//  * Initializes the cloth simulation and spawns a new thread to separate
-//  * rendering from simulation.
-//  */
-//  void KeyFrameAnimator::init() {
+//     // // use shader program to update uniforms
+//     // GLint projLoc = glGetUniformLocation(skinProgram, "uProjection");
+//     // GLint viewLoc = glGetUniformLocation(skinProgram, "uView");
+//     // GLint boneLoc = glGetUniformLocation(skinProgram, "uBoneMatrices");
 
-//     // Initialize GUI
-//     screen->setSize(default_window_size);
-//     initGUI(screen);
-  
-//     // // Initialize camera
-  
-//     // CGL::Collada::CameraInfo camera_info;
-//     // camera_info.hFov = 50;
-//     // camera_info.vFov = 35;
-//     // camera_info.nClip = 0.01;
-//     // camera_info.fClip = 10000;
-  
-//     // // Try to intelligently figure out the camera target
-  
-//     // Vector3D avg_pm_position(0, 0, 0);
-  
-//     // for (auto &pm : cloth->point_masses) {
-//     //   avg_pm_position += pm.position / cloth->point_masses.size();
-//     // }
-  
-//     // CGL::Vector3D target(avg_pm_position.x, avg_pm_position.y / 2,
-//     //                      avg_pm_position.z);
-//     // CGL::Vector3D c_dir(0., 0., 0.);
-//     // canonical_view_distance = max(cloth->width, cloth->height) * 0.9;
-//     // scroll_rate = canonical_view_distance / 10;
-  
-//     // view_distance = canonical_view_distance * 2;
-//     // min_view_distance = canonical_view_distance / 10.0;
-//     // max_view_distance = canonical_view_distance * 20.0;
-  
-//     // // canonicalCamera is a copy used for view resets
-  
-//     // camera.place(target, acos(c_dir.y), atan2(c_dir.x, c_dir.z), view_distance,
-//     //              min_view_distance, max_view_distance);
-//     // canonicalCamera.place(target, acos(c_dir.y), atan2(c_dir.x, c_dir.z),
-//     //                       view_distance, min_view_distance, max_view_distance);
-  
-//     // screen_w = default_window_size(0);
-//     // screen_h = default_window_size(1);
-  
-//     // camera.configure(camera_info, screen_w, screen_h);
-//     // canonicalCamera.configure(camera_info, screen_w, screen_h);
-//   }
-  
+//     // glUniformMatrix4fv(projLoc, 1, GL_FALSE, &projectionMatrix[0][0]);
+//     // glUniformMatrix4fv(viewLoc, 1, GL_FALSE, &viewMatrix[0][0]);
+//     // // upload all your bone transforms in one go:
 
-// //   void KeyFrameAnimator::loadShadersComplex() {
-// //     // read all filenames from /shaders directory
-// //     std::set<std::string> shader_filenames;
-// //     bool success = Utils::list_files_in_directory(m_project_root + "/shaders", shader_filenames);
-// //     if (!success) {
-// //       std::cout << "Error: Could not find the shaders folder!" << std::endl;
-// //     }
+//     // float *ptr = boneMatrices.data()->data();
+
+//     // glUniformMatrix4fv(
+//     //     uBoneMatricesLoc,
+//     //     boneMatrices->size(),
+//     //     GL_FALSE,
+//     //     boneMatrices[0].data()
+//     // );
+
+//     // glBindVertexArray(character->VAO);
+//     // glDrawElements(GL_TRIANGLES,
+//     //                 character->indexCount,
+//     //                 GL_UNSIGNED_INT,
+//     //                 nullptr);
+
+//     // // 4) cleanup
+//     // glBindVertexArray(0);
+//     // glUseProgram(0);
     
-// //     std::string std_vert_shader = m_project_root + "/shaders/Default.vert";
-    
-// //     // iterate through all filenames
-// //     for (const std::string& shader_fname : shader_filenames) {
-// //         // validate the shader
-// //         std::string file_extension;
-// //         std::string shader_name;
-        
-// //         Utils::split_filename(shader_fname, shader_name, file_extension);
-        
-// //         if (file_extension != "frag") {
-// //             std::cout << "Skipping non-shader file: " << shader_fname << std::endl;
-// //             continue;
-// //         }
-        
-// //         std::cout << "Found shader file: " << shader_fname << std::endl;
-        
-// //         // Check if there is a proper .vert shader or not for it. If not, use Default.vert
-// //         std::string vert_shader = std_vert_shader;
-// //         std::string associated_vert_shader_path = m_project_root + "/shaders/" + shader_name + ".vert";
-// //         if (Utils::file_exists(associated_vert_shader_path)) {
-// //             vert_shader = associated_vert_shader_path;
-// //         }
-      
-// //       std::shared_ptr<GLShader> nanogui_shader = make_shared<GLShader>();
-// //       nanogui_shader->initFromFiles(shader_name, vert_shader,
-// //                                     m_project_root + "/shaders/" + shader_fname);
-      
-// //       // Special filenames are treated a bit differently
-// //     //   ShaderTypeHint hint;
-// //     //   if (shader_name == "Wireframe") {
-// //     //     hint = ShaderTypeHint::WIREFRAME;
-// //     //     std::cout << "Type: Wireframe" << std::endl;
-// //     //   } else if (shader_name == "Normal") {
-// //     //     hint = ShaderTypeHint::NORMALS;
-// //     //     std::cout << "Type: Normal" << std::endl;
-// //     //   } else {
-// //     //     hint = ShaderTypeHint::PHONG;
-// //     //     std::cout << "Type: Custom" << std::endl;
-// //     //   }
-      
-// //     //   UserShader user_shader(shader_name, nanogui_shader, hint);
-      
-// //       shaders.push_back(nanogui_shader);
-// //       shaders_combobox_names.push_back(shader_name);
-// //     }
-    
-// //     // Assuming that it's there, use "Wireframe" by default
-// //     for (size_t i = 0; i < shaders_combobox_names.size(); ++i) {
-// //       if (shaders_combobox_names[i] == "Wireframe") {
-// //         active_shader_idx = i;
-// //         break;
-// //       }
-// //     }
-// //   }
+// }
 
 
-// void KeyFrameAnimator::loadShaders() {
-//     // TODO: update this. unnecessary reading all filenames...read all filenames from /shaders directory
-//     std::set<std::string> shader_filenames;
-//     bool success = Utils::list_files_in_directory(m_project_root + "/shaders", shader_filenames);
-//     if (!success) {
-//       std::cout << "Error: Could not find the shaders folder!" << std::endl;
-//     }
-    
-//     std::string shader_name = "Default";
-//     std::string vert_shader_fname = m_project_root + "/shaders/Default.vert";
-//     std::string frag_shader_fname = m_project_root + "/shaders/Default.frag";
-//     shader->initFromFiles(shader_name, vert_shader_fname, frag_shader_fname);
-//   }
-    
+// void Animation::setupDrawCallback() {
+//     screen->setDrawContentsCallback([this]() {
+//         double now = glfwGetTime();
+//         // first frame
+//         if (startTime < 0.0) {
+//             startTime = now;
+//         }
+
+//         double time = now - startTime;
+//         this->character->animateAt(time);
+//         vector<Eigen::Matrix4f>* boneMatrices = &this->character->boneMatrices;
+//         draw(boneMatrices);
+//     });
+// }
+

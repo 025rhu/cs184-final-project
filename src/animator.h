@@ -8,6 +8,9 @@
 #include <Eigen/Core>
 #include <Eigen/Dense>
 #include <vector>
+#include <unordered_map>
+#include <assimp/scene.h>
+#include "shader.h"
 
 using namespace nanogui;
 using namespace std;
@@ -18,14 +21,15 @@ struct Vertex {
     Vector3f normal;
     Vector3f color;
     vector<GLuint> boneIndices;
-    vector<float> weights;
-    
+    vector<float> weights;  
 };
 
 
 struct Bone {
     Bone() {};
     ~Bone();
+
+    int id;
 
 // #################### ATTRIBUTES ####################
     // identifier for this bone (aiBone.mName)
@@ -40,8 +44,8 @@ struct Bone {
     // Eigen::Quaternionf restRotation;
     // Vector3f restScaling;
 
-    // transformationn relative to the node's parent during the animation (interpolated)
-    // Matrix4f localTransformation;
+    // transformation relative to the node's parent during the animation (interpolated)
+    Matrix4f localTransformation;
     // total transformation of this bone at some time during the animation (interpolated, local * parent)
     Matrix4f globalTransformation;
 
@@ -62,7 +66,7 @@ struct Bone {
     // vector<Vertex> vertices;
 
 // #################### FUNCTIONS ####################
-    void interpolateAt(double time, Matrix4f parentTransform);
+    void interpolateAt(double time, Matrix4f &parentTransform);
 
 private:
     Vector3f interpolatePosition(double time) const;
@@ -74,31 +78,68 @@ private:
     int findScalingIndex(double time) const;
 
     Matrix4f buildLocalTransform(double time);
+
 };
 
 
 struct Mesh {
-    // variables for rendering purposes
-    GLuint VAO=0;
-    GLuint indexCount;
     // mesh architecture
+    // std::vector<Bone*> bones;
+    std::vector<Eigen::Matrix4f> boneMatrices;
     unordered_map<string, Bone*>* bones;
     Bone* rootBone;
     vector<Vertex>* vertices;
+    GLuint VAO;
+    GLuint indexCount;
+    double duration = 0.0;
+    double ticksPerSecond = 25.0;
+
+    Mesh();
+    ~Mesh();
 
     void animateAt(double time);
+    // vector<Matrix4f>* getBoneMatrices();
+    void retrieveSceneValues(const aiScene* scene);
+    void findFinalBoneMatrices(double time, vector<Eigen::Matrix4f>& boneMatrices);
+    
+private:
+    void getBoneMatrices(Bone* bone, vector<Eigen::Matrix4f>& boneMatrices);
+    void buildBoneHierarchy(const aiNode* node, Bone* parent);
+
 };
 
 
-struct Animation {
-    Mesh* character; // full object
-    double duration;
+class Animation {
+public:
+    Animation(const std::string &fbxPath);
+    ~Animation();
 
-    double startTime;
-    double endTime;
-    double timestep;
+    // Advance the skeleton to the given time (in seconds)
+    void animateAt(double time);
 
-    void animate();
+    // Draw the skinned mesh.  
+    // Caller must have already done:
+    //    glUseProgram(shaderID);
+    //    glUniformMatrix4fv(uM), uV, uP
+    // before invoking draw().
+    void draw(const std::vector<Eigen::Matrix4f> &boneMatrices);
+
+    Mesh* character;      // your mesh + bone hierarchy
+    double startTime = -1;
+
+private:
+    // skin‐shader program
+    GLuint skinProgram;
+    GLint loc_uBones;     // uniform location for uBoneMatrices[]
+
+    // VAO + how many indices to draw
+    GLuint VAO;
+    GLsizei indexCount;
+
+    // Helpers
+    void initShader(const std::string &vs = "shaders/Default.vert",
+                    const std::string &fs = "shaders/Default.frag");
+    void initMeshBuffers();
 };
 
 
