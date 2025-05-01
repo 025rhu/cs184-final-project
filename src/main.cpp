@@ -92,7 +92,9 @@ class Viewer : public nanogui::Screen {
                 animation->startTime = now;
 
             double t = now - animation->startTime;
-
+            if (animation->character == NULL) {
+                return;
+            }
             animation->character->animateAt(t);
             animation->draw();
         }
