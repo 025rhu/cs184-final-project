@@ -10,12 +10,6 @@
 #include <assimp/Importer.hpp>
 #include <assimp/postprocess.h>
 #include <assimp/scene.h>
-// #include <glad/glad.h>
-// #include "CGL/CGL.h"
-// #include <CGL/vector3D.h>
-// #include <set>
-// #include "nanogui/glutil.h"
-// #include "utils.h"
 
 
 using namespace std;
@@ -143,20 +137,20 @@ Matrix4f Bone::buildLocalTransform(double time) {
     return (Eigen::Translation3f(posTransform) * rotateTransform * Eigen::Scaling(scaleTransform)).matrix();
 }
 
-// Mesh::Mesh()
-//   : bones(new unordered_map<string, Bone*>()),
-//     rootBone(nullptr),
-//     vertices(nullptr),
-//     duration(0.0),
-//     VAO(0),
-//     indexCount(0)
-// {}
+Mesh::Mesh()
+  : bones(new unordered_map<string, Bone*>()),
+    rootBone(nullptr),
+    vertices(nullptr),
+    duration(0.0),
+    VAO(0),
+    indexCount(0)
+{}
 
-// Mesh::~Mesh() {
-//     for (auto &p : *bones) delete p.second;
-//     delete bones;
-//     delete vertices;
-// }
+Mesh::~Mesh() {
+    for (auto &p : *bones) delete p.second;
+    delete bones;
+    delete vertices;
+}
 
 void Mesh::retrieveSceneValues(const aiScene* scene) {
     bones = new unordered_map<string, Bone*>();
@@ -206,6 +200,8 @@ void Mesh::retrieveSceneValues(const aiScene* scene) {
 
         buildBoneHierarchy(scene->mRootNode, nullptr);
     }
+    
+    // getBoneMatrices(rootBone, boneMatrices);
 
 }
 
@@ -231,7 +227,29 @@ void Mesh::buildBoneHierarchy(const aiNode* node, Bone* parent) {
 }
 
 
-void Mesh::findFinalBoneMatrices(double time,vector<Eigen::Matrix4f>& boneMatrices) {
+// void Mesh::findFinalBoneMatrices(double time,vector<Eigen::Matrix4f>& boneMatrices) {
+//     // interpolates at the given time and updates boneMatrices with the new bone matrices
+//     if (!rootBone) {
+//         return;
+//     } 
+//     Matrix4f parentTrans = Eigen::Matrix4f::Identity();
+//     rootBone->interpolateAt(time, parentTrans);
+//     boneMatrices.clear();
+//     getBoneMatrices(rootBone, boneMatrices);
+// }
+
+// potential buggy point if bone matrices are not in the same order
+void Mesh::getBoneMatrices(Bone* bone, vector<Eigen::Matrix4f>& boneMatrices) {
+    // retreives the bone matrices recursively and 
+    boneMatrices.push_back(bone->globalTransformation * bone->offsetMatrix);
+    for (auto *c : *bone->children) {
+        getBoneMatrices(c, boneMatrices);
+    }
+}
+
+
+void Mesh::animateAt(double time) {
+    // findFinalBoneMatrices(time * ticksPerSecond, boneMatrices);
     if (!rootBone) {
         return;
     } 
@@ -241,36 +259,19 @@ void Mesh::findFinalBoneMatrices(double time,vector<Eigen::Matrix4f>& boneMatric
     getBoneMatrices(rootBone, boneMatrices);
 }
 
-// potential buggy point if bone matrices are not in the same order
-void Mesh::getBoneMatrices(Bone* bone, vector<Eigen::Matrix4f>& boneMatrices) {
-    boneMatrices.push_back(bone->globalTransformation * bone->offsetMatrix);
-    for (auto *c : *bone->children) {
-        getBoneMatrices(c, boneMatrices);
-    }
-}
-
-void Mesh::animateAt(double time) {
-    findFinalBoneMatrices(time * ticksPerSecond, boneMatrices);
-}
-
-
-
-
 
 
 //----------------------------------------------------------------------
 // Constructor: compile skin‐shader, load FBX into `character`, build VAO/EBO
 //----------------------------------------------------------------------
-Animation::Animation(const std::string &fbxPath) {
-    // 1) compile + link your default.vert / default.frag
-    initShader();
+Animation::Animation(const std::string &fbxPath, const GLuint shader) {
+    skinProgram = shader;
+    locBoneMatrices = glGetUniformLocation(skinProgram, "uBoneMatrices");
+
 
     // 2) load your model via Assimp into Mesh*
     Assimp::Importer importer;
-    const aiScene* scene = importer.ReadFile(fbxPath,
-        aiProcess_Triangulate |
-        aiProcess_GenSmoothNormals |
-        aiProcess_JoinIdenticalVertices);
+    const aiScene* scene = importer.ReadFile(fbxPath, aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_JoinIdenticalVertices);
     if (!scene) {
         std::cerr << "FBX load error: " << importer.GetErrorString() << std::endl;
         character = nullptr;
@@ -280,9 +281,14 @@ Animation::Animation(const std::string &fbxPath) {
     character->retrieveSceneValues(scene);
 
     // 3) build the VAO/VBO/EBO from character->vertices and your index list
-    initMeshBuffers();
+    initMeshBuffers(scene);
 
-    glEnable(GL_DEPTH_TEST);
+    // glEnable(GL_DEPTH_TEST);
+}
+
+
+Bone::~Bone() {
+
 }
 
 Animation::~Animation() {
@@ -292,24 +298,28 @@ Animation::~Animation() {
     // (also delete any VBO/EBO you generated if you stored them)
 }
 
-//----------------------------------------------------------------------
-// Compile & link, then cache the uniform location for your bone array
-//----------------------------------------------------------------------
-void Animation::initShader(const std::string &vs, const std::string &fs) {
-    skinProgram = createShaderProgram(vs, fs);
-    loc_uBones  = glGetUniformLocation(skinProgram, "uBoneMatrices");
-}
 
 //----------------------------------------------------------------------
 // Build a VAO that matches your Vertex struct & index array
 //----------------------------------------------------------------------
-void Animation::initMeshBuffers() {
+void Animation::initMeshBuffers(const aiScene* scene) {
     // assume your Mesh has:
     //   std::vector<Vertex> *vertices;
     //   std::vector<unsigned int>   indices;   // you must fill this
     auto &verts = *character->vertices;
     std::vector<unsigned int> indices;
     // TODO: fill 'indices' from your aiMesh data (e.g. loop over scene->mMeshes)
+
+    for (unsigned m = 0; m < scene->mNumMeshes; ++m) {
+        const aiMesh* mesh = scene->mMeshes[m];
+        for (unsigned f = 0; f < mesh->mNumFaces; ++f) {
+            const aiFace& face = mesh->mFaces[f];
+            if (face.mNumIndices != 3) continue;  // only triangles
+            indices.push_back(face.mIndices[0]);
+            indices.push_back(face.mIndices[1]);
+            indices.push_back(face.mIndices[2]);
+        }
+    }
 
     indexCount = (GLsizei)indices.size();
 
@@ -362,7 +372,12 @@ void Animation::initMeshBuffers() {
                           (void*)offsetof(Vertex, weights));
 
     glBindVertexArray(0);
+
+    // ####### BONE MATRIX HANDLING ########
+    this->draw();
+
 }
+
 
 //----------------------------------------------------------------------
 // Advance your mesh’s bone matrices
@@ -373,84 +388,25 @@ void Animation::animateAt(double time) {
     }
 }
 
-//----------------------------------------------------------------------
+
 // Draw the skinned mesh: upload bone array, bind VAO, issue draw
-//----------------------------------------------------------------------
-void Animation::draw(const std::vector<Eigen::Matrix4f> &boneMatrices) {
+void Animation::draw() {
     if (!character) return;
+
 
     // assume the caller already did glUseProgram(skinProgram),
     // and uploaded uM, uV, uP.
-
-    // upload all bone transforms in one call:
-    glUniformMatrix4fv(loc_uBones,
-                       (GLsizei)boneMatrices.size(),
-                       GL_FALSE,
-                       boneMatrices.data()->data());
-
-    // draw
+    const auto &bones = character->boneMatrices;
+    glUniformMatrix4fv(locBoneMatrices,
+                        (GLsizei)bones.size(),
+                        GL_FALSE,
+                        bones.data()->data());
+    
     glBindVertexArray(VAO);
     glDrawElements(GL_TRIANGLES, indexCount, GL_UNSIGNED_INT, nullptr);
     glBindVertexArray(0);
+    glUseProgram(0);
+    
 }
 
-
-// Animation::Animation(nanogui::Screen *screen)
-// {
-//     skinProgram = createShaderProgram("./shaders/Default.vert", "./shaders/Default.frag");
-
-// }
-
-
-
-// void Animation::draw(vector<Matrix4f>* boneMatrices) {
-//     // WRONGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG
-//     // glUseProgram(skinProgram);
-
-
-//     // // use shader program to update uniforms
-//     // GLint projLoc = glGetUniformLocation(skinProgram, "uProjection");
-//     // GLint viewLoc = glGetUniformLocation(skinProgram, "uView");
-//     // GLint boneLoc = glGetUniformLocation(skinProgram, "uBoneMatrices");
-
-//     // glUniformMatrix4fv(projLoc, 1, GL_FALSE, &projectionMatrix[0][0]);
-//     // glUniformMatrix4fv(viewLoc, 1, GL_FALSE, &viewMatrix[0][0]);
-//     // // upload all your bone transforms in one go:
-
-//     // float *ptr = boneMatrices.data()->data();
-
-//     // glUniformMatrix4fv(
-//     //     uBoneMatricesLoc,
-//     //     boneMatrices->size(),
-//     //     GL_FALSE,
-//     //     boneMatrices[0].data()
-//     // );
-
-//     // glBindVertexArray(character->VAO);
-//     // glDrawElements(GL_TRIANGLES,
-//     //                 character->indexCount,
-//     //                 GL_UNSIGNED_INT,
-//     //                 nullptr);
-
-//     // // 4) cleanup
-//     // glBindVertexArray(0);
-//     // glUseProgram(0);
-    
-// }
-
-
-// void Animation::setupDrawCallback() {
-//     screen->setDrawContentsCallback([this]() {
-//         double now = glfwGetTime();
-//         // first frame
-//         if (startTime < 0.0) {
-//             startTime = now;
-//         }
-
-//         double time = now - startTime;
-//         this->character->animateAt(time);
-//         vector<Eigen::Matrix4f>* boneMatrices = &this->character->boneMatrices;
-//         draw(boneMatrices);
-//     });
-// }
 

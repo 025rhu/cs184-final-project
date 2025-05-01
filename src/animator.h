@@ -99,11 +99,17 @@ struct Mesh {
 
     void animateAt(double time);
     // vector<Matrix4f>* getBoneMatrices();
+    // helps with loading the model from FBX file into proper values
     void retrieveSceneValues(const aiScene* scene);
+
+    // interpolate and populate bone matrices
     void findFinalBoneMatrices(double time, vector<Eigen::Matrix4f>& boneMatrices);
     
-private:
+    // put bone matrices in bone matrix array after interpolation
     void getBoneMatrices(Bone* bone, vector<Eigen::Matrix4f>& boneMatrices);
+private:
+
+    // helper function with loading the model from FBX file into proper values
     void buildBoneHierarchy(const aiNode* node, Bone* parent);
 
 };
@@ -111,36 +117,37 @@ private:
 
 class Animation {
 public:
-    Animation();
-    Animation(const std::string &fbxPath);
-    ~Animation();
+Animation(const std::string &fbxPath, const GLuint shader);
+~Animation();
+
+    // load a model from the FBX file
+    // void loadModel(const std::string& path);
 
     // Advance the skeleton to the given time (in seconds)
     void animateAt(double time);
 
-    // Draw the skinned mesh.  
+    // Draw the skinned mesh (upload bone matrices to GPU)
     // Caller must have already done:
     //    glUseProgram(shaderID);
     //    glUniformMatrix4fv(uM), uV, uP
     // before invoking draw().
-    void draw(const std::vector<Eigen::Matrix4f> &boneMatrices);
+    void draw();
 
     Mesh* character;      // your mesh + bone hierarchy
     double startTime = -1;
+    // need to be stored for rendering lol wt
 
 private:
     // skin‐shader program
     GLuint skinProgram;
-    GLint loc_uBones;     // uniform location for uBoneMatrices[]
+    GLint locBoneMatrices;     // uniform location for uBoneMatrices[]
 
     // VAO + how many indices to draw
     GLuint VAO;
     GLsizei indexCount;
 
     // Helpers
-    void initShader(const std::string &vs = "shaders/Default.vert",
-                    const std::string &fs = "shaders/Default.frag");
-    void initMeshBuffers();
+    void initMeshBuffers(const aiScene* scene);
 };
 
 

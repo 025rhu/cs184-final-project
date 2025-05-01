@@ -262,7 +262,6 @@ add_executable(FinalProject
     src/shader.cpp
     src/model.cpp
     src/animator.cpp
-    src/animatedObject.cpp
     # Add more source files here as needed
 )
 
