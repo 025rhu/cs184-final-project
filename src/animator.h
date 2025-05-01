@@ -26,7 +26,7 @@ struct Vertex {
 
 
 struct Bone {
-    Bone() {};
+    Bone();
     ~Bone();
 
     int id;
@@ -37,7 +37,7 @@ struct Bone {
     // transforms from mesh space to bone space in bind pose (aiBone.mOffsetMatrix)
     Matrix4f offsetMatrix;
     // list of points to all children of this bone in the overall bone hierarchy (aiNode.mChildren)
-    vector<Bone*>* children;
+    vector<Bone*> children;
     // transformation relative to the node's parent at rest (aiNode.mTransformation)
     Matrix4f restLocalTransformation;
     // Vector3f restPosition;
