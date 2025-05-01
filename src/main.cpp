@@ -122,6 +122,6 @@ int main() {
     screen->setVisible(true);
     screen->drawAll();
     nanogui::mainloop();
-     // nanogui::shutdown();
+    nanogui::shutdown();
     // return 0;
 }

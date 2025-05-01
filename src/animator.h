@@ -84,7 +84,6 @@ private:
 
 struct Mesh {
     // mesh architecture
-    // std::vector<Bone*> bones;
     std::vector<Eigen::Matrix4f> boneMatrices;
     unordered_map<string, Bone*>* bones;
     Bone* rootBone;
