@@ -111,6 +111,7 @@ private:
 
 class Animation {
 public:
+    Animation();
     Animation(const std::string &fbxPath);
     ~Animation();
 

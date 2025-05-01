@@ -241,6 +241,7 @@ void Mesh::findFinalBoneMatrices(double time,vector<Eigen::Matrix4f>& boneMatric
     getBoneMatrices(rootBone, boneMatrices);
 }
 
+// potential buggy point if bone matrices are not in the same order
 void Mesh::getBoneMatrices(Bone* bone, vector<Eigen::Matrix4f>& boneMatrices) {
     boneMatrices.push_back(bone->globalTransformation * bone->offsetMatrix);
     for (auto *c : *bone->children) {
@@ -393,8 +394,6 @@ void Animation::draw(const std::vector<Eigen::Matrix4f> &boneMatrices) {
     glBindVertexArray(0);
 }
 
-
-}
 
 // Animation::Animation(nanogui::Screen *screen)
 // {

@@ -49,7 +49,7 @@ class Viewer : public nanogui::Screen {
 
             double t = now - animation->startTime;
             animation->character->animateAt(t);
-            animation->draw(&animation->character->boneMatrices);
+            animation->draw(animation->character->boneMatrices);
         }
 
     private:
