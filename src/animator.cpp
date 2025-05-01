@@ -307,3 +307,4 @@ void Animation::setupDrawCallback() {
         draw(boneMatrices);
     });
 }
+
