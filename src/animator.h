@@ -66,7 +66,7 @@ struct Bone {
     // vector<Vertex> vertices;
 
 // #################### FUNCTIONS ####################
-    void interpolateAt(double time, Matrix4f parentTransform);
+    void interpolateAt(double time, Matrix4f &parentTransform);
 
 private:
     Vector3f interpolatePosition(double time) const;
@@ -84,19 +84,27 @@ private:
 
 struct Mesh {
     // mesh architecture
-    std::vector<Bone*> bones;
-    std::vector<Matrix4f> boneMatrices;
-    // unordered_map<string, Bone*>* bones;
+    // std::vector<Bone*> bones;
+    std::vector<Eigen::Matrix4f> boneMatrices;
+    unordered_map<string, Bone*>* bones;
     Bone* rootBone;
     vector<Vertex>* vertices;
+    GLuint VAO;
+    GLuint indexCount;
+    double duration = 0.0;
+    double ticksPerSecond = 25.0;
+
+    Mesh();
+    ~Mesh();
+
     void animateAt(double time);
-    vector<Matrix4f>* getBoneMatrices();
-
-//     void retrieveSceneValues(const aiScene* scene);
-//     void findFinalBoneMatrices(double time, vector<Eigen::Matrix4f>& boneMatrices);
-
-// private:
-//     void getBoneMatrices(Bone* bone, const Eigen::Matrix4f& transformation, vector<Eigen::Matrix4f>& boneMatrices);
+    // vector<Matrix4f>* getBoneMatrices();
+    void retrieveSceneValues(const aiScene* scene);
+    void findFinalBoneMatrices(double time, vector<Eigen::Matrix4f>& boneMatrices);
+    
+private:
+    void getBoneMatrices(Bone* bone, vector<Eigen::Matrix4f>& boneMatrices);
+    void buildBoneHierarchy(const aiNode* node, Bone* parent);
 
 };
 
@@ -104,12 +112,22 @@ struct Mesh {
 class Animation {
 public:
     Animation(Screen* screen);
+    
+    ~Animation();
+
+    
 
 private:
     Mesh* character; // full object
     Screen* screen;
-    double duration;
+    GLuint skinProgram;
+    // double duration;
+    Matrix4f projectionMatrix;
+    Matrix4f viewMatrix;
     double startTime = -1.0;
+    // Shader skinShader;
+
+    
     // double endTime;
     // double timestep;
     // double lastRealTime;
@@ -119,8 +137,7 @@ private:
     // double currentTime;
 
     // variables for rendering purposes
-    GLuint VAO=0;
-    GLuint indexCount;
+   
 
 // #################### FUNCTIONS ####################
     void setupDrawCallback();   // used to override nanogui's drawContents() with our own to render our own animation.
