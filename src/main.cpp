@@ -11,7 +11,7 @@
 
 #include "nanogui/common.h"
 #include "shader.h"
-#include "model.h"
+// #include "model.h"
 #include "animator.h"
 
 
@@ -37,17 +37,17 @@ class Viewer : public nanogui::Screen {
         GLuint shader;
 
         Viewer() : nanogui::Screen(Eigen::Vector2i(1024, 768), "Viewer", true) {
-            shader = createShaderProgram("shaders/Default.vert", "shaders/Default.frag");
+            shader = createShaderProgram("shaders/skinning.vert", "shaders/skinning.frag");
             glUseProgram(shader);
 
             // access uniform variables declared in shader program that we loaded in
-            locModel_ = glGetUniformLocation(shader, "uM");
-            locView_  = glGetUniformLocation(shader, "uV");
-            locProj_  = glGetUniformLocation(shader, "uP");
+            locModel_ = glGetUniformLocation(shader, "uModel");
+            locView_  = glGetUniformLocation(shader, "uView");
+            locProj_  = glGetUniformLocation(shader, "uProjection");
 
 
             // create view and projection matrix - this won't change! 
-            viewMatrix_ = lookAt({0,10,0}, {0,-1.4f,0}, {0,0,1});
+            viewMatrix_ = lookAt({0, 0, 5}, {0, 0, 0}, {0, 1, 0});
             float aspect = float(mSize.x())/float(mSize.y());
             projMatrix_ = makePerspective(45.0f * M_PI / 180.0f, aspect, 0.1f, 100.0f);
 
@@ -56,6 +56,11 @@ class Viewer : public nanogui::Screen {
             glUniformMatrix4fv(locProj_,  1, GL_FALSE, projMatrix_.data());
 
             glEnable(GL_DEPTH_TEST);
+
+            int width, height;
+            glfwGetFramebufferSize(glfwWindow(), &width, &height);
+            glViewport(0, 0, width, height);
+
         }
 
         // custom impl of a "look-at" view matrix, equivalent to glm::lookAt()
@@ -77,26 +82,40 @@ class Viewer : public nanogui::Screen {
             
 
         void drawContents() override {
-            // I DONT KNOW HOW QUICKLY DRAWCONTENTS GETS CALLED
-            // BUT IT SHOULDNT DO ANYTHING BEFORE THE ANIMATION IS DONE!
-            if (animation == NULL) {
+            if (animation == NULL || animation->character == NULL)
                 return;
-            }
+        
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
             glUseProgram(shader);
-
-            // update time and call animation->character->animateAt 
+        
+            // Set model matrix — identity for now
+            Eigen::Matrix4f modelMatrix = Eigen::Matrix4f::Identity();
+            glUniformMatrix4fv(locModel_, 1, GL_FALSE, modelMatrix.data());
+        
+            // Advance animation time
             double now = glfwGetTime();
             if (animation->startTime < 0.0)
                 animation->startTime = now;
-
+        
             double t = now - animation->startTime;
-            if (animation->character == NULL) {
-                return;
-            }
+        
             animation->character->animateAt(t);
             animation->draw();
+        }
+
+
+        void setCameraFromBoundingBox(const Eigen::Vector3f& min, const Eigen::Vector3f& max) {
+            Eigen::Vector3f center = 0.5f * (min + max);
+            Eigen::Vector3f size   = max - min;
+            float radius           = size.norm() * 0.5f;
+            float fovY             = 45.0f * M_PI / 180.0f;
+            float distance         = radius / std::tan(fovY / 2.0f);
+    
+            Eigen::Vector3f eye    = center + Eigen::Vector3f(0, 0, distance);
+            viewMatrix_ = lookAt(eye, center, Eigen::Vector3f(0, 1, 0));
+    
+            glUseProgram(shader);
+            glUniformMatrix4fv(locView_, 1, GL_FALSE, viewMatrix_.data());
         }
 
     private:
@@ -117,8 +136,9 @@ int main() {
 
 
     screen->animation = anim;
-    // Viewer* screen = new Viewer(anim);
-    // anim->loadModel();
+    Eigen::Vector3f min = anim->character->bboxMin;
+    Eigen::Vector3f max = anim->character->bboxMax;
+    screen->setCameraFromBoundingBox(min, max);
     screen->setVisible(true);
     screen->drawAll();
     nanogui::mainloop();

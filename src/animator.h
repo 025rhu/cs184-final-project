@@ -106,6 +106,8 @@ struct Mesh {
     
     // put bone matrices in bone matrix array after interpolation
     void getBoneMatrices(Bone* bone, vector<Eigen::Matrix4f>& boneMatrices);
+    Vector3f bboxMin;
+    Vector3f bboxMax;
 private:
 
     // helper function with loading the model from FBX file into proper values
@@ -135,6 +137,7 @@ Animation(const std::string &fbxPath, const GLuint shader);
     Mesh* character;      // your mesh + bone hierarchy
     double startTime = -1;
     // need to be stored for rendering lol wt
+    // GLuint shader;
 
 private:
     // skin‐shader program
