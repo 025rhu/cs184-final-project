@@ -105,6 +105,8 @@ struct Mesh {
     
     // put bone matrices in bone matrix array after interpolation
     void getBoneMatrices(Bone* bone, vector<Eigen::Matrix4f>& boneMatrices);
+    void getBoneMatrices();
+
     Vector3f bboxMin;
     Vector3f bboxMax;
 private:

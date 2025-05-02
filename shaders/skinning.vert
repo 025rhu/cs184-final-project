@@ -15,12 +15,12 @@ uniform mat4 uBoneMatrices[100];  // or however many bones you use
 out vec3 v_color;
 
 void main() {
-    // mat4 skinMatrix = 
-    //       in_weights.x * uBoneMatrices[in_boneIndices.x] +
-    //       in_weights.y * uBoneMatrices[in_boneIndices.y] +
-    //       in_weights.z * uBoneMatrices[in_boneIndices.z] +
-    //       in_weights.w * uBoneMatrices[in_boneIndices.w];
-    mat4 skinMatrix = mat4(1.0);  // TEMP: Skip skinning
+    mat4 skinMatrix = 
+          in_weights.x * uBoneMatrices[in_boneIndices.x] +
+          in_weights.y * uBoneMatrices[in_boneIndices.y] +
+          in_weights.z * uBoneMatrices[in_boneIndices.z] +
+          in_weights.w * uBoneMatrices[in_boneIndices.w];
+    // mat4 skinMatrix = mat4(1.0);  // TEMP: Skip skinning
 
 
     vec4 worldPosition = uModel * skinMatrix * vec4(in_position, 1.0);

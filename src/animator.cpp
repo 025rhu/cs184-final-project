@@ -1,13 +1,13 @@
 #include "animator.h"
 #include "Eigen/src/Geometry/Quaternion.h"
-#include "GLFW/glfw3.h"
+// #include "GLFW/glfw3.h"
 #include "nanogui/common.h"
 #include <cfloat>
 #include <iostream>
 #include <string>
 #include <unordered_map>
 #include <vector>
-#include "shader.h"
+// #include "shader.h"
 #include <assimp/Importer.hpp>
 #include <assimp/postprocess.h>
 #include <assimp/scene.h>
@@ -165,6 +165,7 @@ Mesh::~Mesh() {
     delete bones;
     // delete vertices;
 }
+
 void Mesh::retrieveSceneValues(const aiScene* scene) {
     std::cout << "[Info] Starting scene parsing..." << std::endl;
 
@@ -202,6 +203,13 @@ void Mesh::retrieveSceneValues(const aiScene* scene) {
             usedBoneNames.insert(mesh->mBones[b]->mName.C_Str());
         }
     }
+
+    /// DEBUG CODE
+    cout << "Bone Names: ";
+    for (string name : usedBoneNames) {
+        std::cout << name << " ";
+    }
+    std::cout << std::endl;
 
     // Step 1: Add animated & used bones to boneMap
     const aiAnimation* anim = scene->mAnimations[0];
@@ -258,7 +266,7 @@ void Mesh::retrieveSceneValues(const aiScene* scene) {
     }
 
     // Step 3: Build hierarchy — visit all nodes, attach valid bones
-    int nextBoneId = 0;
+    // int nextBoneId = 0;
 
     std::function<void(const aiNode*, Bone*)> buildHierarchy;
     buildHierarchy = [&](const aiNode* node, Bone* parent) {
@@ -267,7 +275,7 @@ void Mesh::retrieveSceneValues(const aiScene* scene) {
 
         if (boneMap.count(name)) {
             current = boneMap[name];
-            current->id = nextBoneId++;
+            // current->id = nextBoneId++;
             current->restLocalTransformation = Eigen::Map<const Matrix4f>((float*)&node->mTransformation).transpose();
 
             if (parent) {
@@ -287,7 +295,42 @@ void Mesh::retrieveSceneValues(const aiScene* scene) {
 
     buildHierarchy(scene->mRootNode, nullptr);
 
+    int nextId = 0;
+    for (auto& pair : boneMap) {
+        pair.second->id = nextId++;
+    }
+
     std::cout << "[Info] Finished building bone hierarchy and animation data." << std::endl;
+
+    // After assigning bone IDs
+    // std::unordered_set<std::string> allChildNames;
+
+    // // First, collect all bone children
+    // for (const aiNode* node = scene->mRootNode; node != nullptr; ) {
+    //     std::function<void(const aiNode*)> collect = [&](const aiNode* n) {
+    //         for (unsigned int i = 0; i < n->mNumChildren; ++i) {
+    //             std::string childName = n->mChildren[i]->mName.C_Str();
+    //             allChildNames.insert(childName);
+    //             collect(n->mChildren[i]);
+    //         }
+    //     };
+    //     collect(node);
+    //     break;
+    // }
+
+    // // Now find a bone that is not anyone's child (a likely root candidate)
+    // for (const auto& [name, bone] : boneMap) {
+    //     if (allChildNames.find(name) == allChildNames.end()) {
+    //         rootBone = bone;
+    //         std::cout << "[Info] Selected root bone: " << name << std::endl;
+    //         break;
+    //     }
+    // }
+
+    // if (!rootBone) {
+    //     std::cerr << "[Error] Could not identify root bone!" << std::endl;
+    // }
+
 }
 
 
@@ -321,6 +364,12 @@ void Mesh::getBoneMatrices(Bone* bone, vector<Eigen::Matrix4f>& boneMatrices) {
     boneMatrices.push_back(bone->globalTransformation * bone->offsetMatrix);
     for (auto *c : bone->children) {
         getBoneMatrices(c, boneMatrices);
+    }
+}
+
+void Mesh::getBoneMatrices() {
+    for (auto& pair : *bones) {
+        boneMatrices[pair.second->id] = pair.second->globalTransformation * pair.second->offsetMatrix;
     }
 }
 
@@ -443,11 +492,8 @@ void Animation::initMeshBuffers(const aiScene* scene) {
         for (unsigned int b = 0; b < mesh->mNumBones; ++b) {
             const aiBone* bone = mesh->mBones[b];
             std::string boneName = bone->mName.C_Str();
-
-            int boneId = 0;
-            if (character->bones->count(boneName)) {
-                boneId = (*character->bones)[boneName]->id;
-            }
+            int boneId = (*character->bones)[boneName]->id;
+            
 
             for (unsigned int w = 0; w < bone->mNumWeights; ++w) {
                 unsigned int vertexId = globalVertexOffset + bone->mWeights[w].mVertexId;
