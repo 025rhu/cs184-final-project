@@ -51,7 +51,9 @@ class Viewer : public nanogui::Screen {
             // viewMatrix_ = lookAt({0, 2, 5}, {0, 1, 0}, {0, 1, 0});
             // viewMatrix_ = lookAt({5, 2, 0}, {0, 1, 0}, {0, 1, 0});
             // viewMatrix_ = lookAt({5, 2, 0}, {0, 1, 0}, {0, 1, 0});
-            viewMatrix_ = lookAt({0, 10, 0}, {0, 0, 0}, {0, 0, 1});
+            // viewMatrix_ = lookAt({0, 5, 0}, {0, 0, 0}, {0, 0, 1});
+            viewMatrix_ = lookAt({0, 1, 1}, {0, 0, 0}, {0, 1, 0});
+
 
 
 
@@ -105,7 +107,8 @@ class Viewer : public nanogui::Screen {
                 animation->startTime = now;
         
             double t = now - animation->startTime;
-        
+            // std::cout << "[Viewer] Animation time t = " << t << std::endl;
+
             animation->character->animateAt(t);
             animation->draw();
         }

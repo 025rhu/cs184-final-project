@@ -16,11 +16,19 @@ out vec3 v_color;
 
 void main() {
     mat4 skinMatrix = 
-          in_weights.x * uBoneMatrices[in_boneIndices.x] +
-          in_weights.y * uBoneMatrices[in_boneIndices.y] +
-          in_weights.z * uBoneMatrices[in_boneIndices.z] +
-          in_weights.w * uBoneMatrices[in_boneIndices.w];
+        uBoneMatrices[in_boneIndices[0]] * in_weights[0] +
+        uBoneMatrices[in_boneIndices[1]] * in_weights[1] +
+        uBoneMatrices[in_boneIndices[2]] * in_weights[2] +
+        uBoneMatrices[in_boneIndices[3]] * in_weights[3];
+
+
     // mat4 skinMatrix = mat4(1.0);  // TEMP: Skip skinning
+
+    // mat4 skinMatrix = uBoneMatrices[0] * 10.0;
+    skinMatrix[0][0] *= 100.0;
+    skinMatrix[1][1] *= 100.0;
+    skinMatrix[2][2] *= 100.0;
+
 
 
     vec4 worldPosition = uModel * skinMatrix * vec4(in_position, 1.0);

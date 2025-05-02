@@ -197,30 +197,3 @@ if(BUILD_DOCS)
 endif()
 
 set(CMAKE_INSTALL_PREFIX "${FinalProject_SOURCE_DIR}/")
-
-# -----------------------------------------------------------------------------
-# Unit tests
-# -----------------------------------------------------------------------------
-# add_executable(UnitTests
-#     tests/test_animator.cpp
-#     src/animator.cpp
-# )
-
-# target_include_directories(UnitTests PRIVATE
-#     ext/nanogui/include
-#     ext/nanogui/ext/eigen
-#     ext/nanogui/ext/nanovg/src
-#     ext/nanogui/ext/glfw/include
-#     ext/nanogui/ext/glad/include
-#     ext/assimp/include
-# )
-
-# target_link_libraries(UnitTests
-#     nanogui
-#     OpenGL::GL
-#     Threads::Threads
-#     assimp
-# )
-
-# enable_testing()
-# add_test(NAME UnitTests COMMAND UnitTests)
