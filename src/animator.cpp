@@ -1,13 +1,13 @@
 #include "animator.h"
 #include "Eigen/src/Geometry/Quaternion.h"
-#include "GLFW/glfw3.h"
+// #include "GLFW/glfw3.h"
 #include "nanogui/common.h"
 #include <cfloat>
 #include <iostream>
 #include <string>
 #include <unordered_map>
 #include <vector>
-#include "shader.h"
+// #include "shader.h"
 #include <assimp/Importer.hpp>
 #include <assimp/postprocess.h>
 #include <assimp/scene.h>
@@ -31,7 +31,6 @@ void Bone::interpolateAt(double time, Matrix4f &parentTransform) {
     for (auto child : children) {
         child->interpolateAt(time, globalTransform);
     }
-
 }
 
 Vector3f lerp(Vector3f p0, Vector3f p1, double t) {
@@ -39,7 +38,7 @@ Vector3f lerp(Vector3f p0, Vector3f p1, double t) {
 }
 
 Vector3f Bone::interpolatePosition(double time) const {
-    int i = findPositionIndex(time);
+    int i = findIndex(time, &positionTimes);
 
     double t0 = positionTimes[i];
     double t1 = positionTimes[i + 1];
@@ -52,7 +51,7 @@ Vector3f Bone::interpolatePosition(double time) const {
 }
 
 Eigen::Quaternionf Bone::interpolateRotation(double time) const {
-    int i = findRotationIndex(time);
+    int i = findIndex(time, &rotationTimes);
     
     double t0 = rotationTimes[i];
     double t1 = rotationTimes[i + 1];
@@ -65,7 +64,7 @@ Eigen::Quaternionf Bone::interpolateRotation(double time) const {
 }
 
 Vector3f Bone::interpolateScaling(double time) const {
-    int i = findScalingIndex(time);
+    int i = findIndex(time, &scalingTimes);
     
     double t0 = scalingTimes[i];
     double t1 = scalingTimes[i + 1];
@@ -77,65 +76,26 @@ Vector3f Bone::interpolateScaling(double time) const {
     return scale;
 }
 
-int Bone::findPositionIndex(double time) const {
-    if (positionTimes.empty()) {
-        std::cout << "Error: Position times empty." << std::endl;
+int Bone::findIndex(double time, const vector<double>* times) const {
+    if (times->empty()) {
+        std::cout << "Error: Keyframe times empty." << std::endl;
         return -1;
     }
-    if (time <= positionTimes[0]) {
+    if (time <= (*times)[0]) {
         return 0;
     }
-    if (time >= positionTimes.back()){
-        return positionTimes.size() - 2;
+    if (time >= times->back()){
+        return times->size() - 2;
     }
-    for (int i = 0; i < positionTimes.size() - 1; i++) {
-        if (time >= positionTimes[i] && time < positionTimes[i + 1]) {
+    for (int i = 0; i < times->size() - 1; i++) {
+        if (time >= (*times)[i] && time < (*times)[i + 1]) {
             return i;
         }   
     }
-    std::cout << "Time stamp out of range for positions." << std::endl;
+    std::cout << "Time stamp out of range." << std::endl;
     return -1;
 }
 
-int Bone::findRotationIndex(double time) const {
-    if (rotationTimes.empty()) {
-        std::cout << "Error: Position times empty." << std::endl;
-        return -1;
-    }
-    if (time <= rotationTimes[0]) {
-        return 0;
-    }
-    if (time >= rotationTimes.back()){
-        return rotationTimes.size() - 2;
-    }
-    for (int i = 0; i < rotationTimes.size() - 1; i++) {
-        if (time >= rotationTimes[i] && time < rotationTimes[i + 1]) {
-            return i;
-        }
-    }
-    std::cout << "Time stamp out of range for rotations." << std::endl;
-    return -1;
-}
-
-int Bone::findScalingIndex(double time) const {
-    if (scalingTimes.empty()) {
-        std::cout << "Error: Position times empty." << std::endl;
-        return -1;
-    }
-    if (time <= scalingTimes[0]) {
-        return 0;
-    }
-    if (time >= scalingTimes.back()){
-        return scalingTimes.size() - 2;
-    }
-    for (int i = 0; i < scalingTimes.size() - 1; i++) {
-        if (time >= scalingTimes[i] && time < scalingTimes[i + 1]) {
-            return i;
-        }
-    }
-    std::cout << "Time stamp out of range for scaling." << std::endl;
-    return -1;
-}
 
 Matrix4f Bone::buildLocalTransform(double time) {     
     Eigen::Vector3f posTransform = interpolatePosition(time);
@@ -165,27 +125,23 @@ Mesh::~Mesh() {
     delete bones;
     // delete vertices;
 }
+
+void Mesh::debugBones() {
+    /// DEBUG CODE
+    cout << "Bones: " << endl;
+
+    for (auto& [name, bone] : *bones) {
+        std::cout << "Bone: " << name 
+                  << ", ID: " << bone->id 
+                  << ", Keys: " << bone->positionKeys.size()
+                  << ", Offset Trace: " << bone->offsetMatrix.trace() 
+                  << std::endl;
+    }
+    
+}
 void Mesh::retrieveSceneValues(const aiScene* scene) {
     std::cout << "[Info] Starting scene parsing..." << std::endl;
 
-    // --------------------- Compute bounding box ---------------------
-    Eigen::Vector3f bboxMin(FLT_MAX, FLT_MAX, FLT_MAX);
-    Eigen::Vector3f bboxMax(-FLT_MAX, -FLT_MAX, -FLT_MAX);
-
-    for (unsigned int i = 0; i < scene->mNumMeshes; ++i) {
-        const aiMesh* mesh = scene->mMeshes[i];
-        for (unsigned int v = 0; v < mesh->mNumVertices; ++v) {
-            const aiVector3D& pos = mesh->mVertices[v];
-            Eigen::Vector3f vertex(pos.x, pos.y, pos.z);
-            bboxMin = bboxMin.cwiseMin(vertex);
-            bboxMax = bboxMax.cwiseMax(vertex);
-        }
-    }
-
-    this->bboxMin = bboxMin;
-    this->bboxMax = bboxMax;
-
-    // --------------------- Initialize bone map ---------------------
     if (!scene || !scene->HasMeshes() || !scene->HasAnimations()) {
         std::cerr << "[Error] Scene has no meshes or animations." << std::endl;
         return;
@@ -194,7 +150,7 @@ void Mesh::retrieveSceneValues(const aiScene* scene) {
     bones = new std::unordered_map<std::string, Bone*>();
     std::unordered_map<std::string, Bone*>& boneMap = *bones;
 
-    // Step 0: Identify bones actually used by the mesh
+    // Step 0: Collect all bones with weights (used by the mesh)
     std::unordered_set<std::string> usedBoneNames;
     for (unsigned int m = 0; m < scene->mNumMeshes; ++m) {
         const aiMesh* mesh = scene->mMeshes[m];
@@ -203,15 +159,13 @@ void Mesh::retrieveSceneValues(const aiScene* scene) {
         }
     }
 
-    // Step 1: Add animated & used bones to boneMap
+    // Step 1: Create Bone structs from animation channels (for bones with weights)
     const aiAnimation* anim = scene->mAnimations[0];
-    // duration = anim->mDuration;
-
     for (unsigned int i = 0; i < anim->mNumChannels; ++i) {
         const aiNodeAnim* channel = anim->mChannels[i];
         std::string name = channel->mNodeName.C_Str();
 
-        if (!usedBoneNames.count(name)) continue; // skip unskinned bones
+        if (!usedBoneNames.count(name)) continue;
 
         Bone* bone = new Bone();
         bone->name = name;
@@ -244,7 +198,7 @@ void Mesh::retrieveSceneValues(const aiScene* scene) {
         boneMap[name] = bone;
     }
 
-    // Step 2: Assign offset matrices to used bones
+    // Step 2: Assign offset matrices to bones from mesh data
     for (unsigned int m = 0; m < scene->mNumMeshes; ++m) {
         const aiMesh* mesh = scene->mMeshes[m];
         for (unsigned int i = 0; i < mesh->mNumBones; ++i) {
@@ -257,9 +211,18 @@ void Mesh::retrieveSceneValues(const aiScene* scene) {
         }
     }
 
-    // Step 3: Build hierarchy — visit all nodes, attach valid bones
-    int nextBoneId = 0;
+    // Step 3: Assign IDs deterministically
+    std::vector<std::string> sortedNames;
+    for (const auto& pair : boneMap)
+        sortedNames.push_back(pair.first);
+    std::sort(sortedNames.begin(), sortedNames.end());
 
+    int nextId = 0;
+    for (const auto& name : sortedNames) {
+        boneMap[name]->id = nextId++;
+    }
+
+    // Step 4: Build hierarchy (from root node down)
     std::function<void(const aiNode*, Bone*)> buildHierarchy;
     buildHierarchy = [&](const aiNode* node, Bone* parent) {
         std::string name = node->mName.C_Str();
@@ -267,19 +230,17 @@ void Mesh::retrieveSceneValues(const aiScene* scene) {
 
         if (boneMap.count(name)) {
             current = boneMap[name];
-            current->id = nextBoneId++;
             current->restLocalTransformation = Eigen::Map<const Matrix4f>((float*)&node->mTransformation).transpose();
 
             if (parent) {
                 parent->children.push_back(current);
             } else {
-                rootBone = current;  // assign root if not already
+                rootBone = current;
             }
 
-            parent = current;  // Only update parent if it's a real bone
+            parent = current;
         }
 
-        // Always recurse, even if this node isn't a bone
         for (unsigned int i = 0; i < node->mNumChildren; ++i) {
             buildHierarchy(node->mChildren[i], parent);
         }
@@ -287,46 +248,45 @@ void Mesh::retrieveSceneValues(const aiScene* scene) {
 
     buildHierarchy(scene->mRootNode, nullptr);
 
+    // Step 5: Fallback root if none was set
+    if (!rootBone) {
+        std::cerr << "[Warning] No root bone found. Using root scene node as dummy root." << std::endl;
+        rootBone = new Bone();
+        rootBone->name = scene->mRootNode->mName.C_Str();
+        rootBone->restLocalTransformation = Eigen::Map<const Matrix4f>((float*)&scene->mRootNode->mTransformation).transpose();
+        rootBone->id = nextId++;
+        boneMap[rootBone->name] = rootBone;
+    }
+
+    boneMatrices.resize(boneMap.size());
+
+    std::cout << "Total boneMatrices: " << boneMatrices.size() << std::endl;
     std::cout << "[Info] Finished building bone hierarchy and animation data." << std::endl;
+
+    debugBones();
 }
 
 
-// void Mesh::buildBoneHierarchy(const aiNode* node, Bone* parent) {
-//     std::cout << "entered build bone hierarchy" << std::endl;
 
-//     auto curr = bones->find(node->mName.C_Str());
-
-//     Bone* b = nullptr;
-//     if (curr != bones->end()) {
-//         b = curr->second;
-//     }
-//     if (b) {
-//         b->restLocalTransformation = Eigen::Map<Eigen::Matrix4f>((float*)node->mTransformation[0]).transpose();
-//         if (parent) {
-//             parent->children.push_back(b);
-//         } else {
-//             rootBone = b;
-//         }
-//         parent = b;
-//     }
-//     for (int i = 0; i < node->mNumChildren; i++) {
-//         buildBoneHierarchy(node->mChildren[i], parent);
+// potential buggy point if bone matrices are not in the same order
+// void Mesh::getBoneMatrices(Bone* bone, vector<Eigen::Matrix4f>& boneMatrices) {
+//     // retreives the bone matrices recursively and 
+//     boneMatrices.push_back(bone->globalTransformation * bone->offsetMatrix);
+//     for (auto *c : bone->children) {
+//         getBoneMatrices(c, boneMatrices);
 //     }
 // }
 
-
-// potential buggy point if bone matrices are not in the same order
-void Mesh::getBoneMatrices(Bone* bone, vector<Eigen::Matrix4f>& boneMatrices) {
-    // retreives the bone matrices recursively and 
-    boneMatrices.push_back(bone->globalTransformation * bone->offsetMatrix);
-    for (auto *c : bone->children) {
-        getBoneMatrices(c, boneMatrices);
+void Mesh::getBoneMatrices() {
+    // cout << "in get bone matrices" << endl;
+    for (auto& pair : *bones) {
+        boneMatrices[pair.second->id] = pair.second->globalTransformation * pair.second->offsetMatrix;
     }
+    // cout << "finished get bone matrices" << endl;
 }
 
 
 void Mesh::animateAt(double time) {
-    // std::cout << "[Debug] called animateAt mesh" << std::endl;
 
     if (!rootBone) {
         std::cout << "No root bone" << std::endl;
@@ -334,9 +294,16 @@ void Mesh::animateAt(double time) {
     } 
     Matrix4f parentTrans = Eigen::Matrix4f::Identity();
     rootBone->interpolateAt(time, parentTrans);
-    boneMatrices.clear();
-    getBoneMatrices(rootBone, boneMatrices);
-    // std::cout << "[Debug] boneMatrices.size() = " << boneMatrices.size() << std::endl;
+    // boneMatrices.clear();
+    // getBoneMatrices();
+    boneMatrices.resize(bones->size());
+    for (auto& [name, bone] : *bones) {
+        boneMatrices[bone->id] = bone->globalTransformation * bone->offsetMatrix;
+    }
+
+    for (size_t i = 0; i < boneMatrices.size(); ++i) {
+        std::cout << "Bone " << i << " matrix:\n" << boneMatrices[i] << "\n";
+    }
 
 }
 
@@ -371,7 +338,6 @@ Animation::Animation(const std::string &fbxPath, const GLuint shader) {
     // 3) build the VAO/VBO/EBO from character->vertices and your index list
     initMeshBuffers(scene);
 
-    // glEnable(GL_DEPTH_TEST);
 }
 
 
@@ -437,17 +403,15 @@ void Animation::initMeshBuffers(const aiScene* scene) {
     std::vector<std::vector<std::pair<int, float>>> tempWeights(verts.size());
 
     unsigned int globalVertexOffset = 0;
+    cout << "[DEBUG DEBUG DEBUG] for loop for bone weights" << endl;
     for (unsigned m = 0; m < scene->mNumMeshes; ++m) {
         const aiMesh* mesh = scene->mMeshes[m];
 
         for (unsigned int b = 0; b < mesh->mNumBones; ++b) {
             const aiBone* bone = mesh->mBones[b];
             std::string boneName = bone->mName.C_Str();
-
-            int boneId = 0;
-            if (character->bones->count(boneName)) {
-                boneId = (*character->bones)[boneName]->id;
-            }
+            int boneId = (*character->bones)[boneName]->id;
+            cout << "Bone Name: " << boneName << ", Bone ID: " << boneId << endl;
 
             for (unsigned int w = 0; w < bone->mNumWeights; ++w) {
                 unsigned int vertexId = globalVertexOffset + bone->mWeights[w].mVertexId;
@@ -461,6 +425,8 @@ void Animation::initMeshBuffers(const aiScene* scene) {
 
         globalVertexOffset += mesh->mNumVertices;
     }
+
+
 
     // Step 4: Choose top 4 weights and normalize
     for (size_t i = 0; i < verts.size(); ++i) {
@@ -479,6 +445,17 @@ void Animation::initMeshBuffers(const aiScene* scene) {
             verts[i].weights[j]     = total > 0.0f ? vw[j].second / total : 0.0f;
         }
     }
+
+    for (int i = 0; i < 5 && i < verts.size(); ++i) {
+        std::cout << "Vertex " << i << " boneIndices: ";
+        for (int j = 0; j < 4; ++j)
+            std::cout << verts[i].boneIndices[j] << " ";
+        std::cout << " | weights: ";
+        for (int j = 0; j < 4; ++j)
+            std::cout << verts[i].weights[j] << " ";
+        std::cout << "\n";
+    }
+    
 
     // Step 5: Upload to GPU
     indexCount = (GLsizei)indices.size();
@@ -521,6 +498,12 @@ void Animation::initMeshBuffers(const aiScene* scene) {
     glUseProgram(0);
 
     std::cout << "[Info] Buffers initialized: " << verts.size() << " vertices, " << indices.size() / 3 << " triangles.\n";
+
+    for (size_t i = 0; i < boneMatrices.size(); ++i) {
+        if (!boneMatrices[i].allFinite()) {
+            std::cerr << "[Warning] boneMatrices[" << i << "] contains NaN/Inf!" << std::endl;
+        }
+    }
 }
 
 
@@ -539,7 +522,7 @@ void Animation::animateAt(double time) {
 void Animation::draw() {
     if (!character) return;
 
-    const auto &bones = character->boneMatrices;
+    const auto &boneMatrices = character->boneMatrices;
 
     glUseProgram(skinProgram);
 
@@ -548,9 +531,11 @@ void Animation::draw() {
 
     
     glUniformMatrix4fv(locBoneMatrices,
-                       (GLsizei)bones.size(),
+                       (GLsizei)boneMatrices.size(),
                        GL_FALSE,
-                       bones.data()->data());
+                       boneMatrices.data()->data());
+
+                    
                        
     GLenum err = glGetError();
     if (err != GL_NO_ERROR) {
