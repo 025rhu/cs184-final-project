@@ -95,13 +95,10 @@ class Viewer : public nanogui::Screen {
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
             glUseProgram(shader);
         
-            // Set model matrix — identity for now
-            Eigen::Matrix4f modelMatrix = Eigen::Matrix4f::Identity();
-            glUniformMatrix4fv(locModel_, 1, GL_FALSE, modelMatrix.data());
-            glUniformMatrix4fv(locView_,  1, GL_FALSE, viewMatrix_.data());
-            glUniformMatrix4fv(locProj_,  1, GL_FALSE, projMatrix_.data());
+            // Set model matrix. RENDER WORKED EVEN WITHOUT THIS.
+            // Eigen::Matrix4f modelMatrix = Eigen::Matrix4f::Identity();
+            // glUniformMatrix4fv(locModel_, 1, GL_FALSE, modelMatrix.data());
 
-        
             // Advance animation time
             double now = glfwGetTime();
             if (animation->startTime < 0.0)

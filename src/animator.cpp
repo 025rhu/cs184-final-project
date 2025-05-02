@@ -153,17 +153,17 @@ Matrix4f Bone::buildLocalTransform(double time) {
 
 Mesh::Mesh()
   : bones(new unordered_map<string, Bone*>()),
-    rootBone(nullptr),
-    vertices(nullptr),
-    duration(0.0),
-    VAO(0),
-    indexCount(0)
+    rootBone(nullptr)
+    // vertices(nullptr),
+    // duration(0.0)
+    // VAO(0),
+    // indexCount(0)
 {}
 
 Mesh::~Mesh() {
     for (auto &p : *bones) delete p.second;
     delete bones;
-    delete vertices;
+    // delete vertices;
 }
 void Mesh::retrieveSceneValues(const aiScene* scene) {
     std::cout << "[Info] Starting scene parsing..." << std::endl;
@@ -205,7 +205,7 @@ void Mesh::retrieveSceneValues(const aiScene* scene) {
 
     // Step 1: Add animated & used bones to boneMap
     const aiAnimation* anim = scene->mAnimations[0];
-    duration = anim->mDuration;
+    // duration = anim->mDuration;
 
     for (unsigned int i = 0; i < anim->mNumChannels; ++i) {
         const aiNodeAnim* channel = anim->mChannels[i];
@@ -291,28 +291,28 @@ void Mesh::retrieveSceneValues(const aiScene* scene) {
 }
 
 
-void Mesh::buildBoneHierarchy(const aiNode* node, Bone* parent) {
-    std::cout << "entered build bone hierarchy" << std::endl;
+// void Mesh::buildBoneHierarchy(const aiNode* node, Bone* parent) {
+//     std::cout << "entered build bone hierarchy" << std::endl;
 
-    auto curr = bones->find(node->mName.C_Str());
+//     auto curr = bones->find(node->mName.C_Str());
 
-    Bone* b = nullptr;
-    if (curr != bones->end()) {
-        b = curr->second;
-    }
-    if (b) {
-        b->restLocalTransformation = Eigen::Map<Eigen::Matrix4f>((float*)node->mTransformation[0]).transpose();
-        if (parent) {
-            parent->children.push_back(b);
-        } else {
-            rootBone = b;
-        }
-        parent = b;
-    }
-    for (int i = 0; i < node->mNumChildren; i++) {
-        buildBoneHierarchy(node->mChildren[i], parent);
-    }
-}
+//     Bone* b = nullptr;
+//     if (curr != bones->end()) {
+//         b = curr->second;
+//     }
+//     if (b) {
+//         b->restLocalTransformation = Eigen::Map<Eigen::Matrix4f>((float*)node->mTransformation[0]).transpose();
+//         if (parent) {
+//             parent->children.push_back(b);
+//         } else {
+//             rootBone = b;
+//         }
+//         parent = b;
+//     }
+//     for (int i = 0; i < node->mNumChildren; i++) {
+//         buildBoneHierarchy(node->mChildren[i], parent);
+//     }
+// }
 
 
 // potential buggy point if bone matrices are not in the same order
@@ -540,18 +540,8 @@ void Animation::draw() {
     if (!character) return;
 
     const auto &bones = character->boneMatrices;
-    // std::cout << "[Debug] uploading " << bones.size() << " bone matrices\n";
 
-    glUseProgram(skinProgram); // <-- ensure it's bound here
-    glBindVertexArray(VAO);
-    if (VAO == 0) {
-        std::cerr << "[Error] VAO is 0 — not properly initialized!" << std::endl;
-        return;
-    }
-    if (indexCount == 0) {
-        std::cerr << "[Error] indexCount is 0!" << std::endl;
-        return;
-    }
+    glUseProgram(skinProgram);
 
     Eigen::Matrix4f modelMatrix = Eigen::Matrix4f::Identity();
     glUniformMatrix4fv(locModel_, 1, GL_FALSE, modelMatrix.data());
@@ -579,9 +569,6 @@ void Animation::draw() {
         std::cerr << "[GL ERROR] glDrawElements failed: 0x" << std::hex << err << std::dec << std::endl;
     }
 
-    glBindVertexArray(0);
-    glUseProgram(0);
-    
 }
 
 

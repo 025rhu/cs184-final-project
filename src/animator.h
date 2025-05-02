@@ -10,7 +10,7 @@
 #include <vector>
 #include <unordered_map>
 #include <assimp/scene.h>
-#include "shader.h"
+// #include "shader.h"
 
 using namespace nanogui;
 using namespace std;
@@ -84,17 +84,16 @@ private:
 
 struct Mesh {
     // mesh architecture
+    Mesh();
+    ~Mesh();
     std::vector<Eigen::Matrix4f> boneMatrices;
     unordered_map<string, Bone*>* bones;
     Bone* rootBone;
-    vector<Vertex>* vertices;
-    GLuint VAO;
-    GLuint indexCount;
-    double duration = 0.0;
-    double ticksPerSecond = 25.0;
+    // TENTATIVELY REMOVED. ADD BACK IF NEEDED LATER.
+    // double duration = 0.0;
+    // double ticksPerSecond = 25.0;
+    // vector<Vertex>* vertices;
 
-    Mesh();
-    ~Mesh();
 
     void animateAt(double time);
     // vector<Matrix4f>* getBoneMatrices();
@@ -102,7 +101,7 @@ struct Mesh {
     void retrieveSceneValues(const aiScene* scene);
 
     // interpolate and populate bone matrices
-    void findFinalBoneMatrices(double time, vector<Eigen::Matrix4f>& boneMatrices);
+    // void findFinalBoneMatrices(double time, vector<Eigen::Matrix4f>& boneMatrices);
     
     // put bone matrices in bone matrix array after interpolation
     void getBoneMatrices(Bone* bone, vector<Eigen::Matrix4f>& boneMatrices);
@@ -111,7 +110,7 @@ struct Mesh {
 private:
 
     // helper function with loading the model from FBX file into proper values
-    void buildBoneHierarchy(const aiNode* node, Bone* parent);
+    // void buildBoneHierarchy(const aiNode* node, Bone* parent);
 
 };
 
@@ -127,24 +126,17 @@ Animation(const std::string &fbxPath, const GLuint shader);
     // Advance the skeleton to the given time (in seconds)
     void animateAt(double time);
 
-    // Draw the skinned mesh (upload bone matrices to GPU)
-    // Caller must have already done:
-    //    glUseProgram(shaderID);
-    //    glUniformMatrix4fv(uM), uV, uP
-    // before invoking draw().
+    // draw the skinned mesh (upload bone matrices to GPU) after interpolation
     void draw();
 
     Mesh* character;      // your mesh + bone hierarchy
     double startTime = -1;
 
-    // need to be stored for rendering lol wt
-    // GLuint shader;
-
 private:
     // skin‐shader program
-    GLuint skinProgram;
-    GLint locBoneMatrices;     // uniform location for uBoneMatrices[]
-    GLuint locModel_;
+    GLuint skinProgram;         // shader ID
+    GLint locBoneMatrices;      // uniform location for uBoneMatrices[]
+    GLuint locModel_;           // uniform location for model
     // VAO + how many indices to draw
     GLuint VAO;
     GLsizei indexCount;
