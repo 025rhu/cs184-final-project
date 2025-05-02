@@ -73,9 +73,11 @@ private:
     Eigen::Quaternionf interpolateRotation(double time) const;
     Vector3f interpolateScaling(double time) const;
 
-    int findPositionIndex(double time) const;
-    int findRotationIndex(double time) const;
-    int findScalingIndex(double time) const;
+    int findIndex(double time, const vector<double>* times) const;
+
+    // int findPositionIndex(double time) const;
+    // int findRotationIndex(double time) const;
+    // int findScalingIndex(double time) const;
 
     Matrix4f buildLocalTransform(double time);
 
@@ -104,11 +106,13 @@ struct Mesh {
     // void findFinalBoneMatrices(double time, vector<Eigen::Matrix4f>& boneMatrices);
     
     // put bone matrices in bone matrix array after interpolation
-    void getBoneMatrices(Bone* bone, vector<Eigen::Matrix4f>& boneMatrices);
+    // void getBoneMatrices(Bone* bone, vector<Eigen::Matrix4f>& boneMatrices);
     void getBoneMatrices();
 
     Vector3f bboxMin;
     Vector3f bboxMax;
+
+    void debugBones();
 private:
 
     // helper function with loading the model from FBX file into proper values
