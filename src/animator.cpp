@@ -114,10 +114,6 @@ Matrix4f Bone::buildLocalTransform(double time) {
 Mesh::Mesh()
   : bones(new unordered_map<string, Bone*>()),
     rootBone(nullptr)
-    // vertices(nullptr),
-    // duration(0.0)
-    // VAO(0),
-    // indexCount(0)
 {}
 
 Mesh::~Mesh() {
