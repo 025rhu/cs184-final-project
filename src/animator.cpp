@@ -425,8 +425,9 @@ void Animation::initMeshBuffers(const aiScene* scene) {
             vert.color = Eigen::Vector3f(1.0f, 1.0f, 1.0f);
 
             // Initialize bone data
-            vert.boneIndices.resize(4, 0);
-            vert.weights.resize(4, 0.0f);
+        
+            // vert.boneIndices.resize(4, 0);
+            // vert.weights.resize(4, 0.0f);
 
             verts.push_back(vert);
         }
@@ -467,6 +468,27 @@ void Animation::initMeshBuffers(const aiScene* scene) {
         globalVertexOffset += mesh->mNumVertices;
     }
 
+    for (size_t i = 0; i < verts.size(); ++i) {
+        auto &vw = tempWeights[i];
+
+        std::sort(vw.begin(), vw.end(),
+                  [](const std::pair<int,float> &a,
+                     const std::pair<int,float> &b){ return a.second > b.second; });
+
+        size_t count = std::min(vw.size(), size_t(4));
+        float  total = 0.0f;
+        for (size_t j = 0; j < count; ++j) total += vw[j].second;
+
+        for (size_t j = 0; j < 4; ++j) {
+            if (j < count) {
+                verts[i].boneIndices[j] = static_cast<GLuint>(vw[j].first);
+                verts[i].weights[j]     = vw[j].second / total;
+            } else {
+                verts[i].boneIndices[j] = 0u;
+                verts[i].weights[j]     = 0.0f;
+            }
+        }
+    }
 
 
     // Step 4: Choose top 4 weights and normalize
@@ -587,7 +609,7 @@ void Animation::draw() {
     // Eigen::Matrix4f modelMatrix = Eigen::Matrix4f::Identity();
     // glUniformMatrix4fv(locModel_, 1, GL_FALSE, modelMatrix.data());
     Eigen::Matrix4f modelMatrix = Eigen::Matrix4f::Identity();
-    modelMatrix.block<3,3>(0,0) *= 100.0f;  // scale uniformly up
+    //modelMatrix.block<3,3>(0,0) *= 100.0f;  // scale uniformly up
     glUniformMatrix4fv(locModel_, 1, GL_FALSE, modelMatrix.data());
 
 

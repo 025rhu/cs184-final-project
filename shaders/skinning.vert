@@ -22,12 +22,13 @@ void main() {
         uBoneMatrices[in_boneIndices[3]] * in_weights[3];
 
 
-    // mat4 skinMatrix = mat4(1.0);  // TEMP: Skip skinning
+    //mat4 skinMatrix = mat4(1.0);  // TEMP: Skip skinning
 
-    // mat4 skinMatrix = uBoneMatrices[0] * 10.0;
-    skinMatrix[0][0] *= 100.0;
-    skinMatrix[1][1] *= 100.0;
-    skinMatrix[2][2] *= 100.0;
+    //mat4 skinMatrix = uBoneMatrices[0] * 10.0;
+
+    //skinMatrix[0][0] *= 100.0;
+    //skinMatrix[1][1] *= 100.0;
+    //skinMatrix[2][2] *= 100.0;
 
 
 
@@ -35,6 +36,6 @@ void main() {
     gl_Position = uProjection * uView * worldPosition;
 
     v_color = in_color;
-    v_color = vec3(1.0, 0.0, 0.0); // Bright red
+    //v_color = vec3(1.0, 0.0, 0.0); // Bright red
 
 }

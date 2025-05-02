@@ -20,8 +20,10 @@ struct Vertex {
     Vector3f position;
     Vector3f normal;
     Vector3f color;
-    vector<GLuint> boneIndices;
-    vector<float> weights;  
+    GLuint boneIndices[4];
+    float  weights[4];  
+    // vector<GLuint> boneIndices; changed bc apparently this is bad for malloc
+    // vector<float> weights;  
 };
 
 
