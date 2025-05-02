@@ -70,6 +70,10 @@ class Viewer : public nanogui::Screen {
             glfwGetFramebufferSize(glfwWindow(), &width, &height);
             glViewport(0, 0, width, height);
 
+            // Eigen::Matrix4f model = Eigen::Matrix4f::Identity();
+            // glUniformMatrix4fv(glGetUniformLocation(shader,"uM"),1,GL_FALSE,model.data());
+            // glUniformMatrix4fv(glGetUniformLocation(shader,"uV"),1,GL_FALSE,viewMatrix_.data());
+            // glUniformMatrix4fv(glGetUniformLocation(shader,"uP"),1,GL_FALSE,projMatrix_.data());
         }
 
         // custom impl of a "look-at" view matrix, equivalent to glm::lookAt()
@@ -146,9 +150,9 @@ int main() {
 
 
     screen->animation = anim;
-    // Eigen::Vector3f min = anim->character->bboxMin;
-    // Eigen::Vector3f max = anim->character->bboxMax;
-    // screen->setCameraFromBoundingBox(min, max);
+    Eigen::Vector3f min = anim->character->bboxMin;
+    Eigen::Vector3f max = anim->character->bboxMax;
+    screen->setCameraFromBoundingBox(min, max);
     screen->setVisible(true);
     screen->drawAll();
     nanogui::mainloop();

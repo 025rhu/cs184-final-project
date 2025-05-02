@@ -111,8 +111,8 @@ struct Mesh {
     // void getBoneMatrices(Bone* bone, vector<Eigen::Matrix4f>& boneMatrices);
     // void getBoneMatrices();
 
-    // Vector3f bboxMin;
-    // Vector3f bboxMax;
+    Vector3f bboxMin;
+    Vector3f bboxMax;
 
     void debugBones();
 private:

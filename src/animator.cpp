@@ -401,6 +401,10 @@ void Animation::initMeshBuffers(const aiScene* scene) {
     std::vector<Vertex> verts;
     std::vector<unsigned int> indices;
 
+    Eigen::Vector3f bboxMin = Eigen::Vector3f::Constant(std::numeric_limits<float>::max());
+    Eigen::Vector3f bboxMax = Eigen::Vector3f::Constant(std::numeric_limits<float>::lowest());
+
+
     // Step 1: Load vertex data (positions, normals, colors)
     for (unsigned m = 0; m < scene->mNumMeshes; ++m) {
         const aiMesh* mesh = scene->mMeshes[m];
@@ -488,8 +492,14 @@ void Animation::initMeshBuffers(const aiScene* scene) {
                 verts[i].weights[j]     = 0.0f;
             }
         }
+
+        Eigen::Vector3f pos = verts[i].position;
+        bboxMin = bboxMin.cwiseMin(pos);
+        bboxMax = bboxMax.cwiseMax(pos);
     }
 
+    character->bboxMin = bboxMin;
+    character->bboxMax = bboxMax;
 
     // Step 4: Choose top 4 weights and normalize
     for (size_t i = 0; i < verts.size(); ++i) {
@@ -621,11 +631,11 @@ void Animation::draw() {
         if (!boneMatrices[i].allFinite()) {
             std::cerr << "[Warning] boneMatrices[" << i << "] has NaN or Inf\n";
         } else {
-            std::cout << "[BoneMatrix " << i << "] Sample value (0,3): " << boneMatrices[i](0, 3) << "\n";
+            // std::cout << "[BoneMatrix " << i << "] Sample value (0,3): " << boneMatrices[i](0, 3) << "\n";
         }
 
-        std::cout << "[BoneMatrix " << i << "] trace: " << boneMatrices[i].trace()
-          << " norm: " << boneMatrices[i].block<3,3>(0,0).norm() << "\n";
+        // std::cout << "[BoneMatrix " << i << "] trace: " << boneMatrices[i].trace()
+        //  << " norm: " << boneMatrices[i].block<3,3>(0,0).norm() << "\n";
 
     }
 
