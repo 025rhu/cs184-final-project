@@ -104,9 +104,11 @@ class Viewer : public nanogui::Screen {
             float fovY             = 45.0f * M_PI / 180.0f;
             float distance         = radius / std::tan(fovY / 2.0f);
     
-            Eigen::Vector3f eye    = center + Eigen::Vector3f(0, 0, distance);
+            Eigen::Vector3f viewDir = Eigen::Vector3f(-1, 1, -1);
+            Eigen::Vector3f eye    = center + distance * viewDir;
+            Eigen::Vector3f up = Eigen::Vector3f(0, 1, 0);
             //viewMatrix_ = lookAt({-5, 0, 0}, {0, 0, 0}, {0, 1, 0});
-            viewMatrix_ = lookAt({0, 5, 0}, {0, 0, 0}, {0, 0, 1});
+            viewMatrix_ = lookAt(eye, center, up);
     
             glUseProgram(shader);
             glUniformMatrix4fv(locView_, 1, GL_FALSE, viewMatrix_.data());
@@ -122,7 +124,7 @@ int main() {
     Viewer* screen = new Viewer();
     std::cout << "initialized viewer." << std::endl;
 
-    Animation* anim = new Animation("../models/bear_one_mesh.fbx", screen->shader);
+    Animation* anim = new Animation("../models/sky.fbx", screen->shader);
     std::cout << "initialized animation." << std::endl;
 
     screen->animation = anim;
