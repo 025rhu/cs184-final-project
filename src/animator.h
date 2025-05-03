@@ -95,9 +95,11 @@ struct Mesh {
     unordered_map<string, Bone*>* bones;
     Bone* rootBone;
     // TENTATIVELY REMOVED. ADD BACK IF NEEDED LATER.
-    // double duration = 0.0;
+    double duration = 0.0;
     double ticksPerSecond;
     // vector<Vertex>* vertices;
+
+    
 
 
     void animateAt(double time);

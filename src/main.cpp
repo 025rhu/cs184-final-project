@@ -132,6 +132,7 @@ class Viewer : public nanogui::Screen {
     
             Eigen::Vector3f eye    = center + Eigen::Vector3f(0, 0, distance);
             viewMatrix_ = lookAt({-5, 0, 0}, {0, 0, 0}, {0, 1, 0});
+            viewMatrix_ = lookAt({0, 5, 0}, {0, 0, 0}, {0, 0, 1});
 
     
             glUseProgram(shader);
@@ -151,7 +152,7 @@ int main() {
     Viewer* screen = new Viewer();
     std::cout << "initialized viewer." << std::endl;
 
-    Animation* anim = new Animation("../models/bear_without_bone.fbx", screen->shader); // or however you construct it
+    Animation* anim = new Animation("../models/bear_one_mesh.fbx", screen->shader); // or however you construct it
     std::cout << "initialized animation." << std::endl;
 
 

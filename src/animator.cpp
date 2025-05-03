@@ -211,6 +211,7 @@ void Mesh::debugOffsetAccuracy() {
 
 // CORRECT
 void Mesh::retrieveSceneValues(const aiScene* scene) {
+    
     std::cout << "[Info] Starting scene parsing..." << std::endl;
 
     if (!scene || !scene->HasMeshes() || !scene->HasAnimations()) {
@@ -390,7 +391,7 @@ void Mesh::animateAt(double time) {
         std::cout << "No root bone" << std::endl;
         return;
     }
-
+    //double ticks = fmod(time * ticksPerSecond, duration);
     time = time * ticksPerSecond;
     Matrix4f parentTrans = Eigen::Matrix4f::Identity();
 
