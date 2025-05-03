@@ -37,7 +37,6 @@ class Viewer : public nanogui::Screen {
         GLuint shader;
 
         Viewer() : nanogui::Screen(Eigen::Vector2i(1024, 768), "Viewer", true) {
-            //shader = createShaderProgram("shaders/Default.vert", "shaders/Default.frag");
             shader = createShaderProgram("shaders/skinning.vert", "shaders/skinning.frag");
             glUseProgram(shader);
 
@@ -49,11 +48,13 @@ class Viewer : public nanogui::Screen {
 
             // create view and projection matrix - this won't change! 
             // viewMatrix_ = lookAt({0, 0, 5}, {0, 0, 0}, {0, 1, 0});
-            //viewMatrix_ = lookAt({0, 2, 5}, {0, 1, 0}, {0, 1, 0});
-            // viewMatrix_ = lookAt({5, 2, 0}, {0, 1, 0}, {0, 1, 0});
+            // viewMatrix_ = lookAt({0, 2, 5}, {0, 1, 0}, {0, 1, 0});
+            //viewMatrix_ = lookAt({5, 2, 0}, {0, 1, 0}, {0, 1, 0});
             // viewMatrix_ = lookAt({5, 2, 0}, {0, 1, 0}, {0, 1, 0});
             // viewMatrix_ = lookAt({0, 5, 0}, {0, 0, 0}, {0, 0, 1});
-            //viewMatrix_ = lookAt({0, 1, 1}, {0, 0, 0}, {0, 1, 0});
+            viewMatrix_ = lookAt({-5, 0, 0}, {0, 0, 0}, {0, 1, 0});
+           
+
 
 
 
@@ -66,6 +67,8 @@ class Viewer : public nanogui::Screen {
             glUniformMatrix4fv(locProj_,  1, GL_FALSE, projMatrix_.data());
 
             glEnable(GL_DEPTH_TEST);
+            glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+
 
             int width, height;
             glfwGetFramebufferSize(glfwWindow(), &width, &height);
@@ -98,13 +101,14 @@ class Viewer : public nanogui::Screen {
         void drawContents() override {
             if (animation == NULL || animation->character == NULL)
                 return;
-        
+            
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
             glUseProgram(shader);
         
             // Set model matrix. RENDER WORKED EVEN WITHOUT THIS.
             // Eigen::Matrix4f modelMatrix = Eigen::Matrix4f::Identity();
             // glUniformMatrix4fv(locModel_, 1, GL_FALSE, modelMatrix.data());
+
 
             // Advance animation time
             double now = glfwGetTime();
@@ -127,13 +131,8 @@ class Viewer : public nanogui::Screen {
             float distance         = radius / std::tan(fovY / 2.0f);
     
             Eigen::Vector3f eye    = center + Eigen::Vector3f(0, 0, distance);
-            //viewMatrix_ = lookAt(eye, center, Eigen::Vector3f(0, 1, 0));
             viewMatrix_ = lookAt({-5, 0, 0}, {0, 0, 0}, {0, 1, 0});
-            //viewMatrix_ = lookAt({0, 5, 0}, {0, 0, 0}, {0, 0, -1});
 
-
-
-            
     
             glUseProgram(shader);
             glUniformMatrix4fv(locView_, 1, GL_FALSE, viewMatrix_.data());
@@ -152,7 +151,7 @@ int main() {
     Viewer* screen = new Viewer();
     std::cout << "initialized viewer." << std::endl;
 
-    Animation* anim = new Animation("../models/bear_without_bone.fbx", screen->shader); // or however you construct it
+    Animation* anim = new Animation("../models/bear_colored.fbx", screen->shader); // or however you construct it
     std::cout << "initialized animation." << std::endl;
 
 

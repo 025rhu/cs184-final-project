@@ -95,7 +95,7 @@ struct Mesh {
     Bone* rootBone;
     // TENTATIVELY REMOVED. ADD BACK IF NEEDED LATER.
     // double duration = 0.0;
-    // double ticksPerSecond = 25.0;
+    double ticksPerSecond;
     // vector<Vertex>* vertices;
 
 
@@ -115,6 +115,7 @@ struct Mesh {
     Vector3f bboxMax;
 
     void debugBones();
+    void debugOffsetAccuracy();
 private:
 
     // helper function with loading the model from FBX file into proper values

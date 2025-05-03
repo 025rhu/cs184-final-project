@@ -181,6 +181,33 @@ void Mesh::debugBones() {
     std::cout << "========== End Bone Debug ==========\n";
 }
 
+void Mesh::debugOffsetAccuracy() {
+    // Recursively compute bind-pose global transforms
+    std::function<void(Bone*, const Matrix4f&)> dfs =
+      [&](Bone* b, const Matrix4f& parentGlobal) {
+        // 1) Compute this bone's global bind-pose
+        Matrix4f globalBind = parentGlobal * b->restLocalTransformation;
+
+        // 2) Multiply by your offsetMatrix
+        Matrix4f test = b->offsetMatrix * globalBind;
+
+        // 3) Compare to Identity
+        float err = (test - Matrix4f::Identity()).norm();
+        if (err > 1e-3f) {
+            std::cerr 
+              << "[OFFSET MISMATCH] bone " << b->name
+              << " error = " << err << "\n";
+        }
+
+        // Recurse
+        for (Bone* c : b->children)
+            dfs(c, globalBind);
+    };
+
+    if (!rootBone) return;
+    dfs(rootBone, Matrix4f::Identity());
+}
+
 
 // CORRECT
 void Mesh::retrieveSceneValues(const aiScene* scene) {
@@ -205,6 +232,8 @@ void Mesh::retrieveSceneValues(const aiScene* scene) {
 
     // Step 1: Create Bone structs from animation channels (for bones with weights)
     const aiAnimation* anim = scene->mAnimations[0];
+    ticksPerSecond = anim->mTicksPerSecond;
+    if (ticksPerSecond == 0.0) ticksPerSecond = 25.0;  // fallback
     for (unsigned int i = 0; i < anim->mNumChannels; ++i) {
         const aiNodeAnim* channel = anim->mChannels[i];
         std::string name = channel->mNodeName.C_Str();
@@ -242,23 +271,23 @@ void Mesh::retrieveSceneValues(const aiScene* scene) {
         boneMap[name] = bone;
     }
 
-    // Step 2: Assign offset matrices to bones from mesh data
-    for (unsigned int m = 0; m < scene->mNumMeshes; ++m) {
-        const aiMesh* mesh = scene->mMeshes[m];
-        for (unsigned int i = 0; i < mesh->mNumBones; ++i) {
-            const aiBone* aiB = mesh->mBones[i];
-            std::string name = aiB->mName.C_Str();
+    // // Step 2: Assign offset matrices to bones from mesh data
+    // for (unsigned int m = 0; m < scene->mNumMeshes; ++m) {
+    //     const aiMesh* mesh = scene->mMeshes[m];
+    //     for (unsigned int i = 0; i < mesh->mNumBones; ++i) {
+    //         const aiBone* aiB = mesh->mBones[i];
+    //         std::string name = aiB->mName.C_Str();
 
-            if (boneMap.count(name)) {
-                boneMap[name]->offsetMatrix = Eigen::Map<const Matrix4f>((float*)&aiB->mOffsetMatrix).transpose();
-            }
+    //         if (boneMap.count(name)) {
+    //             b->offsetMatrix = globalBind.inverse();
+    //         }
             
-            std::cout << "Bone " << name << " offsetMatrix:\n" << boneMap[name]->offsetMatrix << "\n";
-            std::cout << "restLocalTransformation:\n" << boneMap[name]->restLocalTransformation << "\n";
+    //         std::cout << "Bone " << name << " offsetMatrix:\n" << boneMap[name]->offsetMatrix << "\n";
+    //         std::cout << "restLocalTransformation:\n" << boneMap[name]->restLocalTransformation << "\n";
 
 
-        }
-    }
+    //     }
+    // }
 
     // Step 3: Assign IDs deterministically
     std::vector<std::string> sortedNames;
@@ -296,6 +325,20 @@ void Mesh::retrieveSceneValues(const aiScene* scene) {
     };
 
     buildHierarchy(scene->mRootNode, nullptr);
+    std::function<void(Bone*, const Eigen::Matrix4f&)> fixOffset;
+    fixOffset = [&](Bone* b, const Eigen::Matrix4f& parentGlobal) {
+        // 1) compute this bone's global bind-pose
+        Eigen::Matrix4f globalBind = parentGlobal * b->restLocalTransformation;
+        // 2) override offsetMatrix with the true inverse
+        b->offsetMatrix = globalBind.inverse();
+        // 3) recurse
+        for (Bone* c : b->children)
+            fixOffset(c, globalBind);
+    };
+
+    // run it, starting from the identity
+    if (rootBone)
+        fixOffset(rootBone, Eigen::Matrix4f::Identity());
 
     // Step 5: Fallback root if none was set
     if (!rootBone) {
@@ -312,7 +355,8 @@ void Mesh::retrieveSceneValues(const aiScene* scene) {
     std::cout << "Total boneMatrices: " << boneMatrices.size() << std::endl;
     std::cout << "[Info] Finished building bone hierarchy and animation data." << std::endl;
 
-    debugBones();
+    //debugBones();
+    debugOffsetAccuracy();
 }
 
 
@@ -341,15 +385,16 @@ void Mesh::animateAt(double time) {
         std::cout << "No root bone" << std::endl;
         return;
     } 
+    time = time * ticksPerSecond;
     Matrix4f parentTrans = Eigen::Matrix4f::Identity();
     rootBone->interpolateAt(time, parentTrans); // for controlling actual movement
     // boneMatrices.clear();
     // getBoneMatrices();
     boneMatrices.resize(bones->size());
     for (auto& [name, bone] : *bones) {
-        boneMatrices[bone->id] = bone->globalTransformation; // skip offset
+        //boneMatrices[bone->id] = bone->globalTransformation; // skip offset
 
-        //boneMatrices[bone->id] = bone->globalTransformation * bone->offsetMatrix; // temp change
+        boneMatrices[bone->id] = bone->globalTransformation * bone->offsetMatrix; // temp change
         //boneMatrices[bone->id] *= 100.0f;
     }
 
