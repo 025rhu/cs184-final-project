@@ -41,15 +41,20 @@ class Viewer : public nanogui::Screen {
             locView_  = glGetUniformLocation(shader, "uView");
             locProj_  = glGetUniformLocation(shader, "uProjection");
 
+            // viewMatrix_ = lookAt({0, 10, 0}, {0, 0, 0}, {0, 0, 1});
             viewMatrix_ = lookAt({-5, 0, 0}, {0, 0, 0}, {0, 1, 0});
+
            
+            // viewMatrix_ = lookAt({5, 5, 5}, {0, 0, 0}, {0, 1, 0});
 
 
 
 
 
             float aspect = float(mSize.x())/float(mSize.y());
-            projMatrix_ = makePerspective(45.0f * M_PI / 180.0f, aspect, 0.1f, 100.0f);
+            // projMatrix_ = makePerspective(45.0f * M_PI / 180.0f, aspect, 0.1f, 100.0f);
+            projMatrix_ = makePerspective(75.0f * M_PI / 180.0f, aspect, 0.1f, 100.0f);
+
 
             glUniformMatrix4fv(locView_,  1, GL_FALSE, viewMatrix_.data());
             glUniformMatrix4fv(locProj_,  1, GL_FALSE, projMatrix_.data());
@@ -105,8 +110,14 @@ class Viewer : public nanogui::Screen {
             float distance         = radius / std::tan(fovY / 2.0f);
     
             Eigen::Vector3f eye    = center + Eigen::Vector3f(0, 0, distance);
-            //viewMatrix_ = lookAt({-5, 0, 0}, {0, 0, 0}, {0, 1, 0});
+            // viewMatrix_ = lookAt({-5, 0, 0}, {0, 0, 0}, {0, 1, 0});
+            // viewMatrix_ = lookAt({0, 5, 0}, {0, 0, 0}, {0, 0, 1});
+            // viewMatrix_ = lookAt({5, 5, 5}, {0, 0, 0}, {0, 1, 0});
+            // viewMatrix_ = lookAt({0, 10, 0}, {0, 0, 0}, {0, 0, 1});
             viewMatrix_ = lookAt({0, 5, 0}, {0, 0, 0}, {0, 0, 1});
+
+
+
     
             glUseProgram(shader);
             glUniformMatrix4fv(locView_, 1, GL_FALSE, viewMatrix_.data());
@@ -120,10 +131,10 @@ class Viewer : public nanogui::Screen {
 int main() {
     nanogui::init();
     Viewer* screen = new Viewer();
-    std::cout << "initialized viewer." << std::endl;
+    // std::cout << "initialized viewer." << std::endl;
 
     Animation* anim = new Animation("../models/bear_one_mesh.fbx", screen->shader);
-    std::cout << "initialized animation." << std::endl;
+    // std::cout << "initialized animation." << std::endl;
 
     screen->animation = anim;
     Eigen::Vector3f min = anim->character->bboxMin;

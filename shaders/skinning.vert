@@ -25,7 +25,7 @@ void main() {
 
     vec4 worldPosition = skinMatrix * vec4(in_position, 1.0);
     v_normal = mat3(skinMatrix) * in_normal;
-    vec4 skinnedPosition = skinMatrix * vec4(in_position, 1.0);
+    // vec4 skinnedPosition = skinMatrix * vec4(in_position, 1.0);
     gl_Position = uProjection * uView * worldPosition;
     v_color = in_color;
 }

@@ -35,64 +35,147 @@ Vector3f lerp(Vector3f p0, Vector3f p1, double t) {
     return (1 - t) * p0 + (t * p1);
 }
 
+// Vector3f Bone::interpolatePosition(double time) const {
+//     int i = findIndex(time, &positionTimes);
+
+//     double t0 = positionTimes[i];
+//     double t1 = positionTimes[i + 1];
+//     Vector3f p0 = positionKeys[i];
+//     Vector3f p1 = positionKeys[i + 1];
+
+
+//     double t = (time - t0) / (t1 - t0);
+//     Vector3f position = lerp(p0, p1, t);
+//     return position;
+// }
+
+// Eigen::Quaternionf Bone::interpolateRotation(double time) const {
+//     int i = findIndex(time, &rotationTimes);
+    
+//     double t0 = rotationTimes[i];
+//     double t1 = rotationTimes[i + 1];
+//     Eigen::Quaternionf q0 = rotationKeys[i];
+//     Eigen::Quaternionf q1 = rotationKeys[i + 1];
+
+//     double t = (time - t0) / (t1 - t0);
+//     Eigen::Quaternionf rotation = q0.slerp(t, q1);
+//     return rotation;
+// }
+
+// Vector3f Bone::interpolateScaling(double time) const {
+//     int i = findIndex(time, &scalingTimes);
+    
+//     double t0 = scalingTimes[i];
+//     double t1 = scalingTimes[i + 1];
+//     Vector3f p0 = scalingKeys[i];
+//     Vector3f p1 = scalingKeys[i + 1];
+
+//     double t = (time - t0) / (t1 - t0);
+//     Vector3f scale = lerp(p0, p1, t);
+//     return scale;
+// }
+
 Vector3f Bone::interpolatePosition(double time) const {
+    if (positionTimes.size() == 1)
+        return positionKeys[0];
+
     int i = findIndex(time, &positionTimes);
+    if (i < 0 || i + 1 >= positionTimes.size()) return positionKeys.back();
 
     double t0 = positionTimes[i];
     double t1 = positionTimes[i + 1];
+    if (std::abs(t1 - t0) < 1e-8) return positionKeys[i];  // avoid div by 0
+
     Vector3f p0 = positionKeys[i];
     Vector3f p1 = positionKeys[i + 1];
 
+    if (p0.isApprox(p1)) return p0;
+
     double t = (time - t0) / (t1 - t0);
-    Vector3f position = lerp(p0, p1, t);
-    return position;
+    return lerp(p0, p1, t);
 }
 
 Eigen::Quaternionf Bone::interpolateRotation(double time) const {
+    if (rotationTimes.size() == 1)
+        return rotationKeys[0];
+
     int i = findIndex(time, &rotationTimes);
-    
+    if (i < 0 || i + 1 >= rotationTimes.size()) return rotationKeys.back();
+
     double t0 = rotationTimes[i];
     double t1 = rotationTimes[i + 1];
+    if (std::abs(t1 - t0) < 1e-8) return rotationKeys[i];
+
     Eigen::Quaternionf q0 = rotationKeys[i];
     Eigen::Quaternionf q1 = rotationKeys[i + 1];
 
+    if (q0.isApprox(q1)) return q0;
+    
+
     double t = (time - t0) / (t1 - t0);
-    Eigen::Quaternionf rotation = q0.slerp(t, q1);
-    return rotation;
+    return q0.slerp(t, q1);
 }
 
 Vector3f Bone::interpolateScaling(double time) const {
+    if (scalingTimes.size() == 1)
+        return scalingKeys[0];
+
     int i = findIndex(time, &scalingTimes);
-    
+    if (i < 0 || i + 1 >= scalingTimes.size()) return scalingKeys.back();
+
     double t0 = scalingTimes[i];
     double t1 = scalingTimes[i + 1];
+    if (std::abs(t1 - t0) < 1e-8) return scalingKeys[i];
+
     Vector3f p0 = scalingKeys[i];
     Vector3f p1 = scalingKeys[i + 1];
 
+    if (p0.isApprox(p1)) return p0;
+
+
     double t = (time - t0) / (t1 - t0);
-    Vector3f scale = lerp(p0, p1, t);
-    return scale;
+    return lerp(p0, p1, t);
 }
+
+
+// int Bone::findIndex(double time, const vector<double>* times) const {
+//     if (times->empty()) {
+//         std::cout << "Error: Keyframe times empty." << std::endl;
+//         return -1;
+//     }
+//     if (time <= (*times)[0]) {
+//         return 0;
+//     }
+//     if (time >= times->back()){
+//         cout << "[DEBUG] Time greater than last time" << endl;
+//         return times->size() - 2;
+//     }
+//     for (int i = 0; i < times->size() - 1; i++) {
+//         if (time >= (*times)[i] && time < (*times)[i + 1]) {
+//             return i;
+//         }   
+//     }
+//     std::cout << "Time stamp out of range." << std::endl;
+//     return -1;
+// }
 
 int Bone::findIndex(double time, const vector<double>* times) const {
     if (times->empty()) {
-        std::cout << "Error: Keyframe times empty." << std::endl;
+        std::cerr << "Error: Keyframe times empty." << std::endl;
         return -1;
     }
-    if (time <= (*times)[0]) {
-        return 0;
-    }
-    if (time >= times->back()){
-        return times->size() - 2;
-    }
+    if (time <= (*times)[0]) return 0;
+    if (time >= times->back()) return times->size() - 2;
+
     for (int i = 0; i < times->size() - 1; i++) {
-        if (time >= (*times)[i] && time < (*times)[i + 1]) {
+        if (time >= (*times)[i] && time < (*times)[i + 1])
             return i;
-        }   
     }
-    std::cout << "Time stamp out of range." << std::endl;
-    return -1;
+
+    std::cerr << "Warning: Could not find interpolation index. Falling back.\n";
+    return times->size() - 2;
 }
+
 
 
 Matrix4f Bone::buildLocalTransform(double time) {     
@@ -100,8 +183,11 @@ Matrix4f Bone::buildLocalTransform(double time) {
     Eigen::Quaternionf rotateTransform = interpolateRotation(time);
     Eigen::Vector3f scaleTransform = interpolateScaling(time);
 
-    return (Eigen::Translation3f(posTransform) * rotateTransform * Eigen::Scaling(scaleTransform)).matrix();
+    return (Eigen::Scaling(scaleTransform) * Eigen::Translation3f(posTransform) * rotateTransform).matrix();
+    // return (Eigen::Translation3f(posTransform) * rotateTransform).matrix();
+    // return (Eigen::Translation3f(posTransform) * Eigen::Matrix4f::Identity()).matrix();
 }
+
 
 Mesh::Mesh()
   : bones(new unordered_map<string, Bone*>()),
@@ -113,71 +199,6 @@ Mesh::~Mesh() {
     delete bones;
 }
 
-// void Mesh::debugBones() {
-//     return;
-//     std::cout << "========== Bone Debug Info ==========\n";
-
-//     for (const auto& [name, bone] : *bones) {
-//         std::cout << "Bone: " << name << "\n";
-//         std::cout << "  ID: " << bone->id << "\n";
-//         std::cout << "  Offset Matrix:\n" << bone->offsetMatrix << "\n";
-//         std::cout << "  Rest Local Transform:\n" << bone->restLocalTransformation << "\n";
-
-//         // Position keys
-//         std::cout << "  Position Keys: (" << bone->positionKeys.size() << ")\n";
-//         for (size_t i = 0; i < bone->positionKeys.size(); ++i) {
-//             std::cout << "    [" << i << "] t=" << bone->positionTimes[i]
-//                       << " -> " << bone->positionKeys[i].transpose() << "\n";
-//         }
-
-//         // Rotation keys
-//         std::cout << "  Rotation Keys: (" << bone->rotationKeys.size() << ")\n";
-//         for (size_t i = 0; i < bone->rotationKeys.size(); ++i) {
-//             const auto& q = bone->rotationKeys[i];
-//             std::cout << "    [" << i << "] t=" << bone->rotationTimes[i]
-//                       << " -> (" << q.w() << ", " << q.x() << ", " << q.y() << ", " << q.z() << ")\n";
-//         }
-
-//         // Scaling keys
-//         std::cout << "  Scaling Keys: (" << bone->scalingKeys.size() << ")\n";
-//         for (size_t i = 0; i < bone->scalingKeys.size(); ++i) {
-//             std::cout << "    [" << i << "] t=" << bone->scalingTimes[i]
-//                       << " -> " << bone->scalingKeys[i].transpose() << "\n";
-//         }
-
-//         std::cout << "  Children: " << bone->children.size() << "\n";
-//         std::cout << "-------------------------------------\n";
-//     }
-
-//     std::cout << "========== End Bone Debug ==========\n";
-// }
-
-// void Mesh::debugOffsetAccuracy() {
-//     // Recursively compute bind-pose global transforms
-//     std::function<void(Bone*, const Matrix4f&)> dfs =
-//       [&](Bone* b, const Matrix4f& parentGlobal) {
-//         // 1) Compute this bone's global bind-pose
-//         Matrix4f globalBind = parentGlobal * b->restLocalTransformation;
-
-//         // 2) Multiply by your offsetMatrix
-//         Matrix4f test = b->offsetMatrix * globalBind;
-
-//         // 3) Compare to Identity
-//         float err = (test - Matrix4f::Identity()).norm();
-//         if (err > 1e-3f) {
-//             std::cerr 
-//               << "[OFFSET MISMATCH] bone " << b->name
-//               << " error = " << err << "\n";
-//         }
-
-//         // Recurse
-//         for (Bone* c : b->children)
-//             dfs(c, globalBind);
-//     };
-
-//     if (!rootBone) return;
-//     dfs(rootBone, Matrix4f::Identity());
-// }
 
 void Mesh::retrieveSceneValues(const aiScene* scene) {
     
@@ -225,10 +246,13 @@ void Mesh::retrieveSceneValues(const aiScene* scene) {
         for (unsigned int j = 0; j < channel->mNumRotationKeys; ++j) {
             bone->rotationTimes.push_back(channel->mRotationKeys[j].mTime);
             bone->rotationKeys.emplace_back(
-                channel->mRotationKeys[j].mValue.w,
-                channel->mRotationKeys[j].mValue.x,
-                channel->mRotationKeys[j].mValue.y,
-                channel->mRotationKeys[j].mValue.z);
+                Eigen::Quaternionf(
+                    channel->mRotationKeys[j].mValue.w,
+                    channel->mRotationKeys[j].mValue.x,
+                    channel->mRotationKeys[j].mValue.y,
+                    channel->mRotationKeys[j].mValue.z
+                ).normalized()
+            );
         }
 
         for (unsigned int j = 0; j < channel->mNumScalingKeys; ++j) {
@@ -241,6 +265,21 @@ void Mesh::retrieveSceneValues(const aiScene* scene) {
 
         boneMap[name] = bone;
     }
+
+
+    // // Step 2: Load offset matrices from mesh bones
+    // for (unsigned int m = 0; m < scene->mNumMeshes; ++m) {
+    //     const aiMesh* mesh = scene->mMeshes[m];
+    //     for (unsigned int b = 0; b < mesh->mNumBones; ++b) {
+    //         const aiBone* aiB = mesh->mBones[b];
+    //         std::string name = aiB->mName.C_Str();
+
+    //         if (boneMap.count(name)) {
+    //             // Assimp gives matrices in row-major, we use column-major → transpose
+    //             boneMap[name]->offsetMatrix = Eigen::Map<const Matrix4f>((float*)&aiB->mOffsetMatrix).transpose();
+    //         }
+    //     }
+    // }
 
     // Step 3: Assign IDs deterministically
     std::vector<std::string> sortedNames;
@@ -283,6 +322,8 @@ void Mesh::retrieveSceneValues(const aiScene* scene) {
         Eigen::Matrix4f globalBind = parentGlobal * b->restLocalTransformation;
         // 2) override offsetMatrix with the true inverse
         b->offsetMatrix = globalBind.inverse();
+        // b->offsetMatrix = globalBind;
+
         // 3) recurse
         for (Bone* c : b->children)
             fixOffset(c, globalBind);
@@ -322,6 +363,7 @@ void Mesh::animateAt(double time) {
         return;
     }
     double ticks = fmod(time * ticksPerSecond, duration);
+    // cout << "Time: " << time << ", Ticks: " << ticks << endl;
     time = time * ticksPerSecond;
     Matrix4f parentTrans = Eigen::Matrix4f::Identity();
 
@@ -395,6 +437,13 @@ void Animation::initMeshBuffers(const aiScene* scene) {
 
             // Color (default white)
             vert.color = Eigen::Vector3f(1.0f, 1.0f, 1.0f);
+            // if (mesh->HasVertexColors(0)) {
+            //     aiColor4D color = mesh->mColors[0][0];
+            //     vert.color = Eigen::Vector3f(color.r, color.g, color.b); // ignore alpha
+            //     cout << "has color" << endl;
+            // } else {
+            //     vert.color = Eigen::Vector3f(1.0f, 1.0f, 1.0f); // fallback to white
+            // }
             verts.push_back(vert);
         }
 
@@ -461,22 +510,54 @@ void Animation::initMeshBuffers(const aiScene* scene) {
     character->bboxMax = bboxMax;
 
     // Step 4: Choose top 4 weights and normalize
+    // for (size_t i = 0; i < verts.size(); ++i) {
+    //     auto& vw = tempWeights[i];
+    //     std::sort(vw.begin(), vw.end(), [](const std::pair<int, float>& a, const std::pair<int, float>& b) {
+    //         return a.second > b.second;
+    //     });
+
+    //     float total = 0.0f;
+    //     size_t count = std::min(vw.size(), size_t(4));
+    //     for (size_t j = 0; j < count; ++j)
+    //         total += vw[j].second;
+
+    //     for (size_t j = 0; j < count; ++j) {
+    //         verts[i].boneIndices[j] = vw[j].first;
+    //         verts[i].weights[j]     = total > 0.0f ? vw[j].second / total : 0.0f;
+    //     }
+    // }
+
     for (size_t i = 0; i < verts.size(); ++i) {
         auto& vw = tempWeights[i];
+    
+        // Sort by descending weight
         std::sort(vw.begin(), vw.end(), [](const std::pair<int, float>& a, const std::pair<int, float>& b) {
             return a.second > b.second;
         });
-
-        float total = 0.0f;
+    
+        // Cap to 4 influences
         size_t count = std::min(vw.size(), size_t(4));
-        for (size_t j = 0; j < count; ++j)
-            total += vw[j].second;
-
+        float totalWeight = 0.0f;
+    
         for (size_t j = 0; j < count; ++j) {
-            verts[i].boneIndices[j] = vw[j].first;
-            verts[i].weights[j]     = total > 0.0f ? vw[j].second / total : 0.0f;
+            totalWeight += vw[j].second;
+        }
+    
+        // Avoid division by zero
+        if (totalWeight < 1e-5f) totalWeight = 1.0f;
+    
+        // Write normalized weights and bone indices
+        for (size_t j = 0; j < 4; ++j) {
+            if (j < count) {
+                verts[i].boneIndices[j] = static_cast<GLuint>(vw[j].first);
+                verts[i].weights[j]     = vw[j].second / totalWeight;
+            } else {
+                verts[i].boneIndices[j] = 0u;
+                verts[i].weights[j]     = 0.0f;
+            }
         }
     }
+    
 
     int boneCount = character->boneMatrices.size();
     for (int i = 0; i < 5 && i < verts.size(); ++i) {
@@ -522,6 +603,7 @@ void Animation::initMeshBuffers(const aiScene* scene) {
 
     // Step 6: Upload initial bone transforms (pose = 0)
     character->animateAt(0.0);
+    
     const auto& boneMatrices = character->boneMatrices;
     glUseProgram(skinProgram);
     glUniformMatrix4fv(locBoneMatrices, (GLsizei)boneMatrices.size(), GL_FALSE, boneMatrices.data()->data());
