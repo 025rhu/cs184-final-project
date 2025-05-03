@@ -117,8 +117,7 @@ int Bone::findIndex(double time, const vector<double>* times) const {
 
 
 Matrix4f Bone::buildLocalTransform(double time) {     
-    //Eigen::Vector3f posTransform = interpolatePosition(time);
-    Eigen::Vector3f posTransform = interpolatePosition(time)*1.0f; //temp edit
+    Eigen::Vector3f posTransform = interpolatePosition(time)*1.0f;
     Eigen::Quaternionf rotateTransform = interpolateRotation(time);
     Eigen::Vector3f scaleTransform = interpolateScaling(time);
 
@@ -235,6 +234,7 @@ void Mesh::retrieveSceneValues(const aiScene* scene) {
     const aiAnimation* anim = scene->mAnimations[0];
     ticksPerSecond = anim->mTicksPerSecond;
     if (ticksPerSecond == 0.0) ticksPerSecond = 25.0;  // fallback
+    duration = anim->mDuration;
     for (unsigned int i = 0; i < anim->mNumChannels; ++i) {
         const aiNodeAnim* channel = anim->mChannels[i];
         std::string name = channel->mNodeName.C_Str();
@@ -391,14 +391,14 @@ void Mesh::animateAt(double time) {
         std::cout << "No root bone" << std::endl;
         return;
     }
-    //double ticks = fmod(time * ticksPerSecond, duration);
+    double ticks = fmod(time * ticksPerSecond, duration);
     time = time * ticksPerSecond;
     Matrix4f parentTrans = Eigen::Matrix4f::Identity();
 
-    if (time == 0.0) {
+    if (ticks == 0.0) {
         rootBone->applyRestPose(parentTrans);
     } else {
-        rootBone->interpolateAt(time, parentTrans); //movemenet
+        rootBone->interpolateAt(ticks, parentTrans); //movemenet
     }
 
     boneMatrices.resize(bones->size());

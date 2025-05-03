@@ -67,7 +67,7 @@ class Viewer : public nanogui::Screen {
             glUniformMatrix4fv(locProj_,  1, GL_FALSE, projMatrix_.data());
 
             glEnable(GL_DEPTH_TEST);
-            glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+            //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
 
             int width, height;
