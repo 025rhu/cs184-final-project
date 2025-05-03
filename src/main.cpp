@@ -11,7 +11,6 @@
 
 #include "nanogui/common.h"
 #include "shader.h"
-// #include "model.h"
 #include "animator.h"
 
 
@@ -27,13 +26,10 @@ static Eigen::Matrix4f makePerspective(float fovy, float aspect, float zNear, fl
     return mat;
 }
 
-
-// TODO: in draw contents, write bone matrices to GPU
 class Viewer : public nanogui::Screen {
     public:
         
         Animation* animation;
-        // shader needs to be shared!
         GLuint shader;
 
         Viewer() : nanogui::Screen(Eigen::Vector2i(1024, 768), "Viewer", true) {
@@ -45,13 +41,6 @@ class Viewer : public nanogui::Screen {
             locView_  = glGetUniformLocation(shader, "uView");
             locProj_  = glGetUniformLocation(shader, "uProjection");
 
-
-            // create view and projection matrix - this won't change! 
-            // viewMatrix_ = lookAt({0, 0, 5}, {0, 0, 0}, {0, 1, 0});
-            // viewMatrix_ = lookAt({0, 2, 5}, {0, 1, 0}, {0, 1, 0});
-            //viewMatrix_ = lookAt({5, 2, 0}, {0, 1, 0}, {0, 1, 0});
-            // viewMatrix_ = lookAt({5, 2, 0}, {0, 1, 0}, {0, 1, 0});
-            // viewMatrix_ = lookAt({0, 5, 0}, {0, 0, 0}, {0, 0, 1});
             viewMatrix_ = lookAt({-5, 0, 0}, {0, 0, 0}, {0, 1, 0});
            
 
@@ -62,22 +51,15 @@ class Viewer : public nanogui::Screen {
             float aspect = float(mSize.x())/float(mSize.y());
             projMatrix_ = makePerspective(45.0f * M_PI / 180.0f, aspect, 0.1f, 100.0f);
 
-            // upload precomputed viewMatrix and projectionMatrix to GPU
             glUniformMatrix4fv(locView_,  1, GL_FALSE, viewMatrix_.data());
             glUniformMatrix4fv(locProj_,  1, GL_FALSE, projMatrix_.data());
 
             glEnable(GL_DEPTH_TEST);
-            //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-
+            //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); // to enable mesh mode
 
             int width, height;
             glfwGetFramebufferSize(glfwWindow(), &width, &height);
             glViewport(0, 0, width, height);
-
-            // Eigen::Matrix4f model = Eigen::Matrix4f::Identity();
-            // glUniformMatrix4fv(glGetUniformLocation(shader,"uM"),1,GL_FALSE,model.data());
-            // glUniformMatrix4fv(glGetUniformLocation(shader,"uV"),1,GL_FALSE,viewMatrix_.data());
-            // glUniformMatrix4fv(glGetUniformLocation(shader,"uP"),1,GL_FALSE,projMatrix_.data());
         }
 
         // custom impl of a "look-at" view matrix, equivalent to glm::lookAt()
@@ -96,7 +78,6 @@ class Viewer : public nanogui::Screen {
             m(2,3) =  f.dot(eye);
             return m;
         }
-            
 
         void drawContents() override {
             if (animation == NULL || animation->character == NULL)
@@ -104,11 +85,6 @@ class Viewer : public nanogui::Screen {
             
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
             glUseProgram(shader);
-        
-            // Set model matrix. RENDER WORKED EVEN WITHOUT THIS.
-            // Eigen::Matrix4f modelMatrix = Eigen::Matrix4f::Identity();
-            // glUniformMatrix4fv(locModel_, 1, GL_FALSE, modelMatrix.data());
-
 
             // Advance animation time
             double now = glfwGetTime();
@@ -116,12 +92,10 @@ class Viewer : public nanogui::Screen {
                 animation->startTime = now;
         
             double t = now - animation->startTime;
-            // std::cout << "[Viewer] Animation time t = " << t << std::endl;
 
             animation->character->animateAt(t);
             animation->draw();
         }
-
 
         void setCameraFromBoundingBox(const Eigen::Vector3f& min, const Eigen::Vector3f& max) {
             Eigen::Vector3f center = 0.5f * (min + max);
@@ -131,9 +105,8 @@ class Viewer : public nanogui::Screen {
             float distance         = radius / std::tan(fovY / 2.0f);
     
             Eigen::Vector3f eye    = center + Eigen::Vector3f(0, 0, distance);
-            viewMatrix_ = lookAt({-5, 0, 0}, {0, 0, 0}, {0, 1, 0});
+            //viewMatrix_ = lookAt({-5, 0, 0}, {0, 0, 0}, {0, 1, 0});
             viewMatrix_ = lookAt({0, 5, 0}, {0, 0, 0}, {0, 0, 1});
-
     
             glUseProgram(shader);
             glUniformMatrix4fv(locView_, 1, GL_FALSE, viewMatrix_.data());
@@ -144,17 +117,13 @@ class Viewer : public nanogui::Screen {
         Eigen::Matrix4f viewMatrix_, projMatrix_;
 };
 
-    
-
-
 int main() {
     nanogui::init();
     Viewer* screen = new Viewer();
     std::cout << "initialized viewer." << std::endl;
 
-    Animation* anim = new Animation("../models/bear_one_mesh.fbx", screen->shader); // or however you construct it
+    Animation* anim = new Animation("../models/bear_one_mesh.fbx", screen->shader);
     std::cout << "initialized animation." << std::endl;
-
 
     screen->animation = anim;
     Eigen::Vector3f min = anim->character->bboxMin;
@@ -164,5 +133,4 @@ int main() {
     screen->drawAll();
     nanogui::mainloop();
     nanogui::shutdown();
-    // return 0;
 }

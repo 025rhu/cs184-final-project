@@ -1,7 +1,6 @@
 #ifndef ANIMATOR_H
 #define ANIMATOR_H
 
-// #include "Eigen/src/Geometry/Quaternion.h"
 #include "nanogui/common.h"
 #include <glad/glad.h>
 #include <nanogui/screen.h>
@@ -10,7 +9,6 @@
 #include <vector>
 #include <unordered_map>
 #include <assimp/scene.h>
-// #include "shader.h"
 
 using namespace nanogui;
 using namespace std;
@@ -21,9 +19,7 @@ struct Vertex {
     Vector3f normal;
     Vector3f color;
     GLuint boneIndices[4];
-    float  weights[4];  
-    // vector<GLuint> boneIndices; changed bc apparently this is bad for malloc
-    // vector<float> weights;  
+    float  weights[4];
 };
 
 
@@ -36,36 +32,23 @@ struct Bone {
 // #################### ATTRIBUTES ####################
     // identifier for this bone (aiBone.mName)
     string name;
-    // transforms from mesh space to bone space in bind pose (aiBone.mOffsetMatrix)
-    Matrix4f offsetMatrix;
-    // list of points to all children of this bone in the overall bone hierarchy (aiNode.mChildren)
-    vector<Bone*> children;
-    // transformation relative to the node's parent at rest (aiNode.mTransformation)
-    Matrix4f restLocalTransformation;
-    // Vector3f restPosition;
-    // Eigen::Quaternionf restRotation;
-    // Vector3f restScaling;
+    Matrix4f offsetMatrix;      // transforms from mesh space to bone space in bind pose (aiBone.mOffsetMatrix)
 
-    // transformation relative to the node's parent during the animation (interpolated)
-    Matrix4f localTransformation;
-    // total transformation of this bone at some time during the animation (interpolated, local * parent)
-    Matrix4f globalTransformation;
+    vector<Bone*> children;     // list of points to all children of this bone in the overall bone hierarchy (aiNode.mChildren)
 
-    // times corresponding to each position key (aiNodeAnim.mPositionKeys[i].mTime)
-    std::vector<double> positionTimes;
-    // position keys of this animation channel (aiNodeAnim.mPositionKeys)
-    vector<Eigen::Vector3f> positionKeys;
+    Matrix4f restLocalTransformation;   // transformation relative to the node's parent at rest (aiNode.mTransformation)
+    Matrix4f localTransformation;       // transformation relative to the node's parent during the animation (interpolated)
+    Matrix4f globalTransformation;      // total transformation of this bone at some time during the animation (interpolated, local * parent)
 
-    // times corresponding to each rotation key (aiNodeAnim.mRotationKeys[i].mTime)
-    vector<double> rotationTimes;
-    // rotation keys of this animation channel (aiNodeAnim.mRotationKeys)
-    vector<Eigen::Quaternionf> rotationKeys;
     
-    // times corresponding to each scaling key (aiNodeAnim.mScalingKeys[i].mTime)
-    vector<double> scalingTimes;
-    // scaling keys of this animation channel (aiNodeAnim.mScalingKeys)
-    vector<Eigen::Vector3f> scalingKeys;
-    // vector<Vertex> vertices;
+    std::vector<double> positionTimes;      // times corresponding to each position key (aiNodeAnim.mPositionKeys[i].mTime)
+    vector<Eigen::Vector3f> positionKeys;   // position keys of this animation channel (aiNodeAnim.mPositionKeys)
+
+    vector<double> rotationTimes;           // times corresponding to each rotation key (aiNodeAnim.mRotationKeys[i].mTime)
+    vector<Eigen::Quaternionf> rotationKeys;    // rotation keys of this animation channel (aiNodeAnim.mRotationKeys)
+    
+    vector<double> scalingTimes;            // times corresponding to each scaling key (aiNodeAnim.mScalingKeys[i].mTime)
+    vector<Eigen::Vector3f> scalingKeys;    // scaling keys of this animation channel (aiNodeAnim.mScalingKeys)
 
 // #################### FUNCTIONS ####################
     void interpolateAt(double time, Matrix4f &parentTransform);
@@ -77,83 +60,51 @@ private:
     Vector3f interpolateScaling(double time) const;
 
     int findIndex(double time, const vector<double>* times) const;
-
-    // int findPositionIndex(double time) const;
-    // int findRotationIndex(double time) const;
-    // int findScalingIndex(double time) const;
-
     Matrix4f buildLocalTransform(double time);
 
 };
 
 
 struct Mesh {
-    // mesh architecture
     Mesh();
     ~Mesh();
     std::vector<Eigen::Matrix4f> boneMatrices;
     unordered_map<string, Bone*>* bones;
     Bone* rootBone;
-    // TENTATIVELY REMOVED. ADD BACK IF NEEDED LATER.
     double duration = 0.0;
     double ticksPerSecond;
-    // vector<Vertex>* vertices;
-
-    
-
 
     void animateAt(double time);
-    // vector<Matrix4f>* getBoneMatrices();
-    // helps with loading the model from FBX file into proper values
-    void retrieveSceneValues(const aiScene* scene);
-
-    // interpolate and populate bone matrices
-    // void findFinalBoneMatrices(double time, vector<Eigen::Matrix4f>& boneMatrices);
-    
-    // put bone matrices in bone matrix array after interpolation
-    // void getBoneMatrices(Bone* bone, vector<Eigen::Matrix4f>& boneMatrices);
-    // void getBoneMatrices();
+    void retrieveSceneValues(const aiScene* scene); // helps with loading the model from FBX file into proper values
 
     Vector3f bboxMin;
     Vector3f bboxMax;
 
-    void debugBones();
-    void debugOffsetAccuracy();
-private:
-
-    // helper function with loading the model from FBX file into proper values
-    // void buildBoneHierarchy(const aiNode* node, Bone* parent);
+    // void debugBones();
+    // void debugOffsetAccuracy();
 
 };
 
 
 class Animation {
 public:
-Animation(const std::string &fbxPath, const GLuint shader);
-~Animation();
+    Animation(const std::string &fbxPath, const GLuint shader);
+    ~Animation();
 
-    // load a model from the FBX file
-    // void loadModel(const std::string& path);
+    void animateAt(double time);    // Advance the skeleton to the given time (in seconds)
+    void draw();                    // draw the skinned mesh (upload bone matrices to GPU) after interpolation
 
-    // Advance the skeleton to the given time (in seconds)
-    void animateAt(double time);
-
-    // draw the skinned mesh (upload bone matrices to GPU) after interpolation
-    void draw();
-
-    Mesh* character;      // your mesh + bone hierarchy
+    Mesh* character;                // mesh + bone hierarchy
     double startTime = -1;
 
 private:
-    // skin‐shader program
-    GLuint skinProgram;         // shader ID
-    GLint locBoneMatrices;      // uniform location for uBoneMatrices[]
-    GLuint locModel_;           // uniform location for model
-    // VAO + how many indices to draw
-    GLuint VAO;
-    GLsizei indexCount;
+    GLuint skinProgram;             // shader ID
+    GLint locBoneMatrices;          // uniform location for uBoneMatrices[]
+    GLuint locModel_;               // uniform location for model
+    GLuint VAO;                     // VAO
+    GLsizei indexCount;             // how many indices to draw
 
-    // Helpers
+    // helpers
     void initMeshBuffers(const aiScene* scene);
 };
 
