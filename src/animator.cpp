@@ -25,6 +25,7 @@ Bone::Bone() : id(-1) {
 void Bone::interpolateAt(double time, Matrix4f &parentTransform) {
     Matrix4f localTransform = buildLocalTransform(time);
     Matrix4f globalTransform = parentTransform * localTransform;    // try parent * local if this looks wonky
+    //globalTransform.block<3,1>(0,3) *= 1.2f; // temporary exaggeration
     this->localTransformation = localTransform;
     this->globalTransformation = globalTransform;
     
@@ -32,6 +33,7 @@ void Bone::interpolateAt(double time, Matrix4f &parentTransform) {
         child->interpolateAt(time, globalTransform);
     }
 }
+
 
 Vector3f lerp(Vector3f p0, Vector3f p1, double t) {
     return (1 - t) * p0 + (t * p1);
@@ -115,7 +117,8 @@ int Bone::findIndex(double time, const vector<double>* times) const {
 
 
 Matrix4f Bone::buildLocalTransform(double time) {     
-    Eigen::Vector3f posTransform = interpolatePosition(time);
+    //Eigen::Vector3f posTransform = interpolatePosition(time);
+    Eigen::Vector3f posTransform = interpolatePosition(time)*1.0f; //temp edit
     Eigen::Quaternionf rotateTransform = interpolateRotation(time);
     Eigen::Vector3f scaleTransform = interpolateScaling(time);
 
@@ -140,6 +143,7 @@ Mesh::~Mesh() {
 }
 
 void Mesh::debugBones() {
+    return;
     std::cout << "========== Bone Debug Info ==========\n";
 
     for (const auto& [name, bone] : *bones) {
@@ -248,6 +252,11 @@ void Mesh::retrieveSceneValues(const aiScene* scene) {
             if (boneMap.count(name)) {
                 boneMap[name]->offsetMatrix = Eigen::Map<const Matrix4f>((float*)&aiB->mOffsetMatrix).transpose();
             }
+            
+            std::cout << "Bone " << name << " offsetMatrix:\n" << boneMap[name]->offsetMatrix << "\n";
+            std::cout << "restLocalTransformation:\n" << boneMap[name]->restLocalTransformation << "\n";
+
+
         }
     }
 
@@ -333,13 +342,15 @@ void Mesh::animateAt(double time) {
         return;
     } 
     Matrix4f parentTrans = Eigen::Matrix4f::Identity();
-    rootBone->interpolateAt(time, parentTrans);
+    rootBone->interpolateAt(time, parentTrans); // for controlling actual movement
     // boneMatrices.clear();
     // getBoneMatrices();
     boneMatrices.resize(bones->size());
     for (auto& [name, bone] : *bones) {
-        boneMatrices[bone->id] = bone->globalTransformation * bone->offsetMatrix;
-        // boneMatrices[bone->id] *= 100.0f;
+        boneMatrices[bone->id] = bone->globalTransformation; // skip offset
+
+        //boneMatrices[bone->id] = bone->globalTransformation * bone->offsetMatrix; // temp change
+        //boneMatrices[bone->id] *= 100.0f;
     }
 
     // for (size_t i = 0; i < boneMatrices.size(); ++i) {
@@ -492,6 +503,18 @@ void Animation::initMeshBuffers(const aiScene* scene) {
                 verts[i].weights[j]     = 0.0f;
             }
         }
+
+          for (size_t j = 0; j < 4; ++j) {
+        if ((verts[i].boneIndices[j] == 17 || verts[i].boneIndices[j] == 18) && verts[i].weights[j] > 0.25f) {
+            verts[i].color = Eigen::Vector3f(1.0f, 1.0f, 0.0f); // bright yellow
+            break;
+        }
+        if ((verts[i].boneIndices[j] == 12 || verts[i].boneIndices[j] == 13) && verts[i].weights[j] > 0.25f) {
+            verts[i].color = Eigen::Vector3f(0.0f, 1.0f, 1.0f); // bright red = fingers
+            break;
+        }
+        }
+
 
         Eigen::Vector3f pos = verts[i].position;
         bboxMin = bboxMin.cwiseMin(pos);

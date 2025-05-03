@@ -10,9 +10,11 @@ uniform mat4 uModel;
 uniform mat4 uView;
 uniform mat4 uProjection;
 
-uniform mat4 uBoneMatrices[100];  // or however many bones you use
+uniform mat4 uBoneMatrices[21];  // or however many bones you use
 
 out vec3 v_color;
+out vec3 v_normal;
+out vec3 worldPosition;
 
 void main() {
     mat4 skinMatrix = 
@@ -22,20 +24,16 @@ void main() {
         uBoneMatrices[in_boneIndices[3]] * in_weights[3];
 
 
-    //mat4 skinMatrix = mat4(1.0);  // TEMP: Skip skinning
+    mat4 skinMatrix1 = mat4(1.0);  // TEMP: Skip skinning
+    vec4 worldPosition = skinMatrix * vec4(in_position, 1.0);
 
-    //mat4 skinMatrix = uBoneMatrices[0] * 10.0;
-
-    //skinMatrix[0][0] *= 100.0;
-    //skinMatrix[1][1] *= 100.0;
-    //skinMatrix[2][2] *= 100.0;
-
-
-
-    vec4 worldPosition = uModel * skinMatrix * vec4(in_position, 1.0);
+    v_normal = mat3(skinMatrix) * in_normal;
+    
+    vec4 skinnedPosition = skinMatrix * vec4(in_position, 1.0);
+   
     gl_Position = uProjection * uView * worldPosition;
 
     v_color = in_color;
-    //v_color = vec3(1.0, 0.0, 0.0); // Bright red
+    
 
 }
