@@ -151,7 +151,7 @@ int main() {
     Viewer* screen = new Viewer();
     std::cout << "initialized viewer." << std::endl;
 
-    Animation* anim = new Animation("../models/bear_colored.fbx", screen->shader); // or however you construct it
+    Animation* anim = new Animation("../models/bear_without_bone.fbx", screen->shader); // or however you construct it
     std::cout << "initialized animation." << std::endl;
 
 

@@ -69,6 +69,7 @@ struct Bone {
 
 // #################### FUNCTIONS ####################
     void interpolateAt(double time, Matrix4f &parentTransform);
+    void applyRestPose(const Matrix4f &parentTransform);
 
 private:
     Vector3f interpolatePosition(double time) const;

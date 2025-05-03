@@ -378,31 +378,34 @@ void Mesh::retrieveSceneValues(const aiScene* scene) {
     // cout << "finished get bone matrices" << endl;
 // }
 
+void Bone::applyRestPose(const Matrix4f &parentTransform) {
+    globalTransformation = parentTransform * restLocalTransformation;
+    for (Bone* child : children) {
+        child->applyRestPose(globalTransformation);
+    }
+}
 
 void Mesh::animateAt(double time) {
-
     if (!rootBone) {
         std::cout << "No root bone" << std::endl;
         return;
-    } 
-    time = time * ticksPerSecond;
-    Matrix4f parentTrans = Eigen::Matrix4f::Identity();
-    rootBone->interpolateAt(time, parentTrans); // for controlling actual movement
-    // boneMatrices.clear();
-    // getBoneMatrices();
-    boneMatrices.resize(bones->size());
-    for (auto& [name, bone] : *bones) {
-        //boneMatrices[bone->id] = bone->globalTransformation; // skip offset
-
-        boneMatrices[bone->id] = bone->globalTransformation * bone->offsetMatrix; // temp change
-        //boneMatrices[bone->id] *= 100.0f;
     }
 
-    // for (size_t i = 0; i < boneMatrices.size(); ++i) {
-    //     std::cout << "Bone " << i << " matrix:\n" << boneMatrices[i] << "\n";
-    // }
+    time = time * ticksPerSecond;
+    Matrix4f parentTrans = Eigen::Matrix4f::Identity();
 
+    if (time == 0.0) {
+        rootBone->applyRestPose(parentTrans);
+    } else {
+        rootBone->interpolateAt(time, parentTrans); //movemenet
+    }
+
+    boneMatrices.resize(bones->size());
+    for (auto& [name, bone] : *bones) {
+        boneMatrices[bone->id] = bone->globalTransformation * bone->offsetMatrix;
+    }
 }
+
 
 
 
