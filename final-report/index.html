@@ -55,36 +55,98 @@
 
 		<h2>Abstract</h2>
         <p>
-            A paragraph summary of the entire project.
+            For our project, Paws in Motion, we built a lightweight FBX animation viewer that uses temporal keyframing to interpolate between different poses at different times for a character mesh, to visualize a final, smooth animation of the character’s movements. In our program, we first displayed a viewer using the nanogui library, and used the Assimp library to load in a bear character from an FBX file, processing and computing all the information needed for temporal keyframing, such as the character’s bone hierarchy, and each bone’s position, rotation, and scale at each time. We also sent vertex data, including which bones affected the vertex (bone indices) and how much each bone affected the vertex (bone weights), to the GPU. Then, every time our OpenGL viewer drew to the screen, we interpolated the character’s bone transforms, and used hierarchical transforms to get each bone’s final transformation. We then sent these bone transforms to the GPU, where our shader program used them to compute each vertex’s final position. With that, and a basic diffuse shader program, we rendered our bear animation to the screen. 
+        </p>
+		<p>
+			We built our program completely from scratch. Our code started from a blank sheet, but we did refer to homework 4’s repository to help with setting up our own (src/, ext/, shaders/, models/), getting external libraries, and writing a proper CMakeLists.txt. With that, the final product is an in-house FBX keyframe animator!
+		</p>
+
+        <h2>Technical Approach</h2>
+		<h3>Blending, Rigging, Animating Keyframes</h3>
+		<p>In this project, we began by learning to use Blender to 3D model and rig our bear character. We blocked out the base of the bear with primitive meshes, like cubes and spheres, for the head, ears, torso, and limbs. To enhance the appearance, we then used subdivision modifiers and sculpting techniques to create detail and smoother curves, and we also added a dark brown color to the entire bear. In terms of rigging, we started by creating a bone hierarchy, which included bone chains for the arms, legs, spine, and head. To make parsing the armature later easier, we also added a root bone so that all the bones ended up within 1 big chain. Then, to establish bone weights, we set the parent of the mesh to the armature and allowed Blender to assign automatic weights. Finally, for movement, we moved around some of the bones to create a couple different poses and set them at keyframes (10 frames apart from each other). From here, we exported the file as an FBX file, which is then ready to be parsed by the program to animate the character.</p>
+        <p>Our main hurdle in this section was learning how to use Blender, as it was our first time working with the software and 3D modeling. We started by following tutorials on how to build simple objects and familiarize ourselves with Blender, and then slowly added more color and detail to our bear character. We also made sure to look into rigging tutorials before tackling the animation aspect to ensure that we were creating accurate armature for the character. </p>
+		
+		<h3>Setting up the Repo</h3>
+		<p>text</p>
+		<h3>Our Program</h3>
+		<ol>
+			<li>Data Structures + Design
+				<p>text</p>
+			</li>
+			<li>Loading in the Model
+				<p>text</p>
+			</li>
+			<li>Animation + Interpolation
+				<p>text</p>
+			</li>
+			<li>Other specifics
+				<p>text</p>
+			</li>
+			
+		</ol>
+		<h3>Debugging / Wonky Results / Particular Challenges</h3>
+		<p>
+			We found some particular roadblocks especially when dealing with actually rendering out the image to test for. We found that initially, much of the code we were writing was difficult to fully test out. For instance, we had to first flush out the data structures of our animation objects, but we didn’t have anything to test that the data structures were actually displaying until quite later. 
+		</p>
+		<p>
+			What was also challenging was trying to decipher how the different tools we used interacted with each other. For example, we really had to understand how the armatures in our Blender model worked if we were to understand how our own produced animation worked. Simple things we overlooked in Blender, such as the existence of an extraneous bone and multiple meshes instead of a singular one threw us off as we tried to understand why our animation didn’t look the way we wanted it to, at first believing it to be a purely code-side issue.
         </p>
 
-        <h2>Technical approach</h2>
-
+		<h3>What We Learned</h3>
         <p>
-            A 1-2 page summary of your technical approach, techniques used, algorithms implemented, etc. (use references to papers or other resources for further detail). Highlight how your approach varied from the references used (did you implement a subset, or did you change or enhance anything), the unique decisions you made and why.
-        </p>
-
-        <p>
-            A description of problems encountered and how you tackled them.
-        </p>
-
-        <p>
-            A description of lessons learned.
+            First, we learned how to use Blender to rig a character, for the first time. For the coding portion, we learned how to set up a C++ repository with a shader program, to the point where we learned the ins and outs of CMakeLists.txt. To set up the window and render our animation, we learned more about OpenGL and nanogui, including GL functions and variables, and how it actually connects our C++ code to our shader programs. To load in the FBX file and retrieve all the necessary data correctly, we learned about the Assimp library and its data structures and functions. To animate the character, we learned how to properly apply hierarchical transforms with offset matrices, and the actual interpolation algorithms themselves. To view the animation properly in our nanogui window, we really dug deep into understanding camera view and its associated matrices (view matrix and projection matrix). 
         </p>
 
         <h2>Results</h2>
 
         <p>
-            Your final images, animations, video of your system (whichever is relevant).
-            You can include results that you think show off what you built but that you did not have time to go over on presentation day.
+			<div style="display: flex; flex-direction: column; align-items: center;">
+				<table style="width: 100%; text-align: center; border-collapse: collapse;">
+				  <tr>
+					<td style="text-align: center;">
+					  <img src="spider_gif.gif" width="400px"/>
+					  <figcaption>Spider file Found Online (Sanity Check)</figcaption>
+					</td>
+					<td style="text-align: center;">
+					  <img src="bear_animation.gif" width="400px"/>
+					  <figcaption>Our Animated Bear</figcaption>
+					</td>
+					<td style="text-align: center;">
+						<img src="bear_blender_gif.png" width="400px"/>
+						<figcaption>Blender Animated Bear</figcaption>
+					</td>
+				  </tr>
+				</table>
+			</div>
         </p>
         <h2>References</h2>
 
         <h2>Contributions from each team member</h2>
-        <p>
-            A clear description of the work contributed by each team member.
-        </p>
-		
+        <p>Rachel</p>
+		<ul>
+			<li>Set up repository with CMakeLists.txt with proper extensions, got a basic view of a FBX file going, set up a shader program</li>
+			<li>Designed and implemented the Bone / Mesh / Animation classes/data structures</li>
+		</ul>
+		<p>Philip</p>
+		<ul>
+			<li>Designed initial animation class, cleaned up code structure for Viewer/Animation classes</li>
+			<li>Debugging for inverse-bone matrix binds</li>
+		</ul>
+		<p>Crystal</p>
+		<ul>
+			<li>Rigging the character + building the character + animating the character with poses</li>
+			<li>Designed and implemented the Bone / Mesh / Animation classes/data structures</li>
+
+		</ul>		<p>Jessica</p>
+		<ul>
+			<li>Learned Blender, exporting the character correctly from Blender</li>
+			<li>Debugging skinning and setting up how to actually view the animation and ensure compatibility with Blender</li>
+		</ul>
+
+		<p>Overall, the lines aren’t the clearest because we all worked together pretty collaboratively; while tasks could generally be assigned independently, such as loading in the file, doing the interpolation algorithm / design our data structures, then sending stuff to GPU + shader program + draw function stuff (openGL functions). But a lot of this depended on the design of the program itself, which we had an initial idea of, but evidently would discover more that would change our design along the way, thus affecting every single one of these tasks. Ultimately, we all worked together on the viewer, interpolation algorithms, loading in the FBX file, sending data to the GPU, writing a shader program, and of course debugging everything to get the code to work.
+			
+			</p>A lot of our work also required iterating on our code, completely replacing previous versions that others did based on new designs.
+		<p>			
 		</div>
 	</body>
 </html>
