@@ -74,10 +74,10 @@
 
 				<p>	We defined our structs / data structures in the animator.h and animator.cpp files. The structs we implemented include:</p>
 				<ul>
-					<li><u>Vertex struct</u>: store information for every vertex in the object mesh</li>
+					<li><u>Vertex struct</u>: stores information (position, normal, color) for every vertex in the object mesh</li>
 					<li><u>Bone struct</u>: stores id, bind-pose offset matrix, rest/local/global transforms for every bone; keeps track of keyframe channels (position, rotation, scaling) and parent-child relationships; <code>interpolateAt</code> method to compute and propagate transforms</li>
-					<li><u>Mesh struct</u>: </li>
-					<li><u>Animation struct</u>: </li>
+					<li><u>Mesh struct</u>: stores list of bones, skin‐to-bind matrices, duration, ticks per second; <code>retrieveSceneValues</code> method to parse Assimp data, <code>animateAt</code> method to build boneMatrices</li>
+					<li><u>Animation struct</u>: stores character, shader ID, uniform location for uBoneMatrices[], uniform location for model, indexCount; <code>draw</code> method to upload skin matrices and issue draw call</li>
 				</ul>
 			</li>
 			<br>
@@ -96,10 +96,7 @@
 				<p>
 				</p>
 			</li>
-			<li> Anything else? i actually don't think we need another section unlses we want a misc section
-				<p>
-				</p>
-			</li>
+
 			
 		</ol>
 		<h3>Debugging / Wonky Results / Particular Challenges</h3>
@@ -144,7 +141,7 @@
 			<li>Using Blender for animation: <a href="https://www.blender.org/features/animation/">https://www.blender.org/features/animation/</a></li>
 			<li>Blender Character Model Example: <a href="https://www.youtube.com/watch?v=aMRRNC1J6tU">https://www.youtube.com/watch?v=aMRRNC1J6tU</a></li>
 			<li>Tutorial for Character Rigging: <a href="https://www.youtube.com/watch?v=jIwrswJEFBQ">https://www.youtube.com/watch?v=jIwrswJEFBQ</a></li>
-			<li>Assimp Documentation <a href="https://documentation.help/assimp/index.html#main_data"></a>https://documentation.help/assimp/index.html#main_data</li>
+			<li>Assimp Documentation: <a href="https://documentation.help/assimp/index.html#main_data">https://documentation.help/assimp/index.html#main_data</a></li>
 
 		</ul>
 
