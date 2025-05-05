@@ -67,7 +67,9 @@
         <p>Our main hurdle in this section was learning how to use Blender, as it was our first time working with the software and 3D modeling. We started by following tutorials on how to build simple objects and familiarize ourselves with Blender, and then slowly added more color and detail to our bear character. We also made sure to look into rigging tutorials before tackling the animation aspect to ensure that we were creating accurate armature for the character. </p>
 		
 		<h3>Setting up the Repo</h3>
-		<p>text</p>
+		<p>We initialized our project in a similar fashion to other homeworks. We created a /src folder, a /shaders folder, and within /src we create main.cpp, which was our entry point.
+			From here, we needed to create a CMakeLists.txt, and then run <code>cmake</code> within the /build directory. This took a lot of trial and error as well as debugging, as it was difficult to set up CMakeLists.txt correctly. We also at first tried fetching the Assimp repo we needed on the fly, by using FetchContent. Eventually, we settled for an approach that integrated the Assimp repo under /ext, so we could use all of Assimp's functionality easily.
+		</p>
 		<h3>Our Program</h3>
 		<ol>
 			<li>Data Structures + Design
