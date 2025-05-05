@@ -94,6 +94,7 @@
 			</li>
 			<li> Shading/Skinning
 				<p>
+					For shading our model, we chose to use a very simple diffuse model, just like the one covered in-class. However this time, we had to take skinning into account. Because the locations of the bones are constantly being updated, we must update the shading of the mesh to accurately reflect this. So for every vertex, we shaded based on a linear combination of a few of its surrounding bones. Though the code for this wasn’t very long, it took quite a bit of conceptual understanding and experimenting with the output renderings to fully implement.
 				</p>
 			</li>
 
@@ -172,11 +173,16 @@
 		<p>Overall, the lines aren’t the clearest because we all worked together pretty collaboratively; while tasks could generally be assigned independently, such as loading in the file, doing the interpolation algorithm / design our data structures, then sending stuff to GPU + shader program + draw function stuff (openGL functions). But a lot of this depended on the design of the program itself, which we had an initial idea of, but evidently would discover more that would change our design along the way, thus affecting every single one of these tasks. Ultimately, we all worked together on the viewer, interpolation algorithms, loading in the FBX file, sending data to the GPU, writing a shader program, and of course debugging everything to get the code to work.
 			
 			</p>A lot of our work also required iterating on our code, completely replacing previous versions that others did based on new designs.
+<<<<<<< HEAD
+		<p>			
+		</div>
+=======
 		<p>
 		<h2>Other Links</h2>
 		<p>Slides (short version) <a href="https://docs.google.com/presentation/d/1zKIBz6-Fbq15RwVmsrjdHqBxfk9Z2w5rl7Ap6taBi34/edit?usp=sharing">https://docs.google.com/presentation/d/1zKIBz6-Fbq15RwVmsrjdHqBxfk9Z2w5rl7Ap6taBi34/edit?usp=sharing</a></p>
 		<p>Slides (long version) <a href="https://docs.google.com/presentation/d/16yg85rvm-EwEcx7TumWZmbqK876pfaWOhTOr7q8jz0c/edit?usp=sharing">https://docs.google.com/presentation/d/16yg85rvm-EwEcx7TumWZmbqK876pfaWOhTOr7q8jz0c/edit?usp=sharing</a></p>
 		<p>Video link: <a href="https://drive.google.com/file/d/1JWaMLC2_vuAcSkP0bHd4urUslKMcrttd/view?usp=sharing">https://drive.google.com/file/d/1JWaMLC2_vuAcSkP0bHd4urUslKMcrttd/view?usp=sharing</a></p>
 	</div>
+>>>>>>> f51dbf0e4151b9a9e3dcacffc4132178da8c2e6d
 	</body>
 </html>
